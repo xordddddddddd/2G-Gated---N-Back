@@ -45,6 +45,16 @@ npm run build
 npm run preview
 ```
 
+## Deploy to Vercel
+
+This project is configured for Vercel with `vercel.json` (Vite build → `dist/`).
+
+```bash
+npx vercel --prod
+```
+
+Or connect the GitHub repo in the [Vercel dashboard](https://vercel.com/new) for automatic deployments on push.
+
 ## Tech Stack
 
 - React 19 + TypeScript
