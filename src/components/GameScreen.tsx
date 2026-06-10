@@ -9,6 +9,7 @@ interface GameScreenProps {
   nLevel: number
   isScorable: boolean
   feedback: TrialFeedback
+  isSpeaking?: boolean
   onMatch: () => void
   onPause: () => void
 }
@@ -34,6 +35,7 @@ export function GameScreen({
   nLevel,
   isScorable,
   feedback,
+  isSpeaking = false,
   onMatch,
   onPause,
 }: GameScreenProps) {
@@ -67,7 +69,11 @@ export function GameScreen({
       <main className="flex-1 flex flex-col items-center justify-center p-6 gap-8 max-w-lg mx-auto w-full">
         <GateIndicator inputGate={trial.inputGate} outputGate={trial.outputGate} />
 
-        <StimulusDisplay stimulus={trial.stimulus} />
+        <StimulusDisplay
+          stimulus={trial.stimulus}
+          inputGate={trial.inputGate}
+          isSpeaking={isSpeaking}
+        />
 
         {feedback && (
           <div

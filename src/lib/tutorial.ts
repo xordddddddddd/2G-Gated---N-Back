@@ -93,7 +93,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     demoStimulus: stim(4, 'K', 'blue', 'diamond'),
     demoInputGate: gate(true, true, true, true),
     demoOutputGate: 'or',
-    hint: 'Position is the highlighted cell on the 3×3 grid. Letter, color, and shape appear below.',
+    hint: 'Position is the highlighted grid cell. Letters are spoken aloud. Colors and shapes are shown below. Only active (highlighted) streams count each trial.',
   },
   {
     id: 'nback',

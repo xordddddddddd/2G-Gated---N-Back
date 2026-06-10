@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { playFeedback, playLetter, resumeAudio } from '../lib/audio'
+import { playFeedback, resumeAudio, speakLetter, stopSpeech } from '../lib/audio'
 import { shouldRespond, getActiveStreams } from '../lib/gating'
 import { TUTORIAL_STEPS, type TutorialStep } from '../lib/tutorial'
 import type { TrialFeedback } from '../types/game'
@@ -14,9 +14,10 @@ export function useTutorial(soundEnabled: boolean) {
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null)
   const [respondedThisTrial, setRespondedThisTrial] = useState(false)
   const [retryTrial, setRetryTrial] = useState(false)
+  const [isSpeaking, setIsSpeaking] = useState(false)
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const speakTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const step: TutorialStep = TUTORIAL_STEPS[stepIndex]
   const trials = step.trials ?? []
@@ -32,10 +33,12 @@ export function useTutorial(soundEnabled: boolean) {
       clearInterval(intervalRef.current)
       intervalRef.current = null
     }
-    if (advanceTimeoutRef.current) {
-      clearTimeout(advanceTimeoutRef.current)
-      advanceTimeoutRef.current = null
+    if (speakTimeoutRef.current) {
+      clearTimeout(speakTimeoutRef.current)
+      speakTimeoutRef.current = null
     }
+    stopSpeech()
+    setIsSpeaking(false)
   }, [])
 
   const resetTrialState = useCallback(() => {
@@ -163,7 +166,13 @@ export function useTutorial(soundEnabled: boolean) {
   useEffect(() => {
     if (view !== 'practice' || !currentTrial) return
 
-    playLetter(currentTrial.stimulus.letter, soundEnabled)
+    if (currentTrial.inputGate.letter && soundEnabled) {
+      setIsSpeaking(true)
+      speakLetter(currentTrial.stimulus.letter, true)
+      speakTimeoutRef.current = setTimeout(() => setIsSpeaking(false), 900)
+    } else {
+      setIsSpeaking(false)
+    }
 
     intervalRef.current = setInterval(() => {
       if (isScorable) {
@@ -223,5 +232,6 @@ export function useTutorial(soundEnabled: boolean) {
     startPractice,
     handleMatch,
     continueFromFeedback,
+    isSpeaking,
   }
 }

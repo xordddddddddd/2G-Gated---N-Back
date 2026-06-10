@@ -38,6 +38,7 @@ export function TutorialScreen({
   startPractice,
   handleMatch,
   continueFromFeedback,
+  isSpeaking = false,
 }: TutorialScreenProps) {
   const progress = getTutorialProgress(stepIndex)
 
@@ -87,7 +88,10 @@ export function TutorialScreen({
                     outputGate={step.demoOutputGate}
                   />
                 )}
-                <StimulusDisplay stimulus={step.demoStimulus} />
+                <StimulusDisplay
+                  stimulus={step.demoStimulus}
+                  inputGate={step.demoInputGate}
+                />
               </div>
             )}
 
@@ -146,7 +150,11 @@ export function TutorialScreen({
               inputGate={currentTrial.inputGate}
               outputGate={currentTrial.outputGate}
             />
-            <StimulusDisplay stimulus={currentTrial.stimulus} />
+            <StimulusDisplay
+              stimulus={currentTrial.stimulus}
+              inputGate={currentTrial.inputGate}
+              isSpeaking={isSpeaking}
+            />
 
             <p className="text-sm text-muted text-center">
               {isScorable
@@ -167,7 +175,12 @@ export function TutorialScreen({
 
         {view === 'feedback' && feedback && (
           <div className="flex flex-col gap-6 flex-1 justify-center">
-            {currentTrial && <StimulusDisplay stimulus={currentTrial.stimulus} />}
+            {currentTrial && (
+              <StimulusDisplay
+                stimulus={currentTrial.stimulus}
+                inputGate={currentTrial.inputGate}
+              />
+            )}
             <div
               className={`text-center py-4 px-4 rounded-xl border text-sm font-medium ${FEEDBACK_STYLES[feedback]}`}
             >

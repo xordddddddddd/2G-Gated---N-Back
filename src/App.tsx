@@ -89,6 +89,7 @@ export default function App() {
         nLevel={game.nLevel}
         isScorable={game.isScorable}
         feedback={game.feedback}
+        isSpeaking={game.isSpeaking}
         onMatch={game.handleMatch}
         onPause={game.pauseSession}
       />

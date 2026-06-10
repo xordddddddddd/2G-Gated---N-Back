@@ -23,11 +23,12 @@ export async function resumeAudio(): Promise<void> {
   if (ctx.state === 'suspended') {
     await ctx.resume()
   }
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.resume()
+  }
 }
 
-export function playLetter(letter: string, enabled = true): void {
-  if (!enabled) return
-
+function playLetterTone(letter: string): void {
   const frequency = LETTER_FREQUENCIES[letter]
   if (!frequency) return
 
@@ -45,6 +46,35 @@ export function playLetter(letter: string, enabled = true): void {
   gain.connect(ctx.destination)
   oscillator.start(ctx.currentTime)
   oscillator.stop(ctx.currentTime + 0.4)
+}
+
+/** Speak the letter aloud (classic dual n-back style), with tone fallback. */
+export function speakLetter(letter: string, enabled = true): void {
+  if (!enabled || !letter) return
+
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(letter)
+    utterance.rate = 0.95
+    utterance.pitch = 1
+    utterance.volume = 1
+    utterance.onerror = () => playLetterTone(letter)
+    window.speechSynthesis.speak(utterance)
+    return
+  }
+
+  playLetterTone(letter)
+}
+
+/** @deprecated Use speakLetter */
+export function playLetter(letter: string, enabled = true): void {
+  speakLetter(letter, enabled)
+}
+
+export function stopSpeech(): void {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel()
+  }
 }
 
 export function playFeedback(type: 'hit' | 'miss' | 'false-alarm' | 'level-up'): void {

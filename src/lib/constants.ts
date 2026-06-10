@@ -13,11 +13,11 @@ export const COLORS = [
 
 export const SHAPES = [
   { id: 'circle', label: 'Circle', path: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z' },
-  { id: 'square', label: 'Square', path: 'M4 4h16v16H4z' },
-  { id: 'triangle', label: 'Triangle', path: 'M12 3l9 17H3z' },
-  { id: 'diamond', label: 'Diamond', path: 'M12 2l10 10-10 10L2 12z' },
-  { id: 'star', label: 'Star', path: 'M12 2l2.9 6.9L22 9.8l-5.5 4.8L18.2 22 12 18.1 5.8 22l1.7-7.4L2 9.8l7.1-.9z' },
-  { id: 'hexagon', label: 'Hexagon', path: 'M12 2l8.5 5v10L12 22l-8.5-5V7z' },
+  { id: 'square', label: 'Square', path: 'M4 4h16v16H4V4z' },
+  { id: 'triangle', label: 'Triangle', path: 'M12 3L22 21H2L12 3z' },
+  { id: 'diamond', label: 'Diamond', path: 'M12 2l10 10-10 10L2 12l10-10z' },
+  { id: 'star', label: 'Star', path: 'M12 2l2.4 5.8L21 9l-4.8 4.2L17.6 21 12 17.3 6.4 21l1.4-7.8L3 9l6.6-1.2L12 2z' },
+  { id: 'hexagon', label: 'Hexagon', path: 'M12 2l8.66 5v10L12 22l-8.66-5V7L12 2z' },
 ] as const
 
 export const GRID_SIZE = 3

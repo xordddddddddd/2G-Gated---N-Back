@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { playFeedback, playLetter, resumeAudio } from '../lib/audio'
+import { playFeedback, resumeAudio, speakLetter, stopSpeech } from '../lib/audio'
 import { shouldRespond, getActiveStreams } from '../lib/gating'
 import { generateTrials } from '../lib/sequence'
 import { computeStats, suggestNLevel } from '../lib/stats'
@@ -24,8 +24,10 @@ export function useGame() {
   const [respondedThisTrial, setRespondedThisTrial] = useState(false)
   const [stats, setStats] = useState<SessionStats | null>(null)
   const [suggestedN, setSuggestedN] = useState(settings.nLevel)
+  const [isSpeaking, setIsSpeaking] = useState(false)
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const speakTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const currentTrial = trials[trialIndex] ?? null
@@ -41,6 +43,12 @@ export function useGame() {
       clearInterval(countdownRef.current)
       countdownRef.current = null
     }
+    if (speakTimeoutRef.current) {
+      clearTimeout(speakTimeoutRef.current)
+      speakTimeoutRef.current = null
+    }
+    stopSpeech()
+    setIsSpeaking(false)
   }, [])
 
   const finishTrial = useCallback(
@@ -171,7 +179,13 @@ export function useGame() {
   useEffect(() => {
     if (phase !== 'playing' || !currentTrial) return
 
-    playLetter(currentTrial.stimulus.letter, settings.soundEnabled)
+    if (currentTrial.inputGate.letter && settings.soundEnabled) {
+      setIsSpeaking(true)
+      speakLetter(currentTrial.stimulus.letter, true)
+      speakTimeoutRef.current = setTimeout(() => setIsSpeaking(false), 900)
+    } else {
+      setIsSpeaking(false)
+    }
 
     intervalRef.current = setInterval(() => {
       if (!respondedThisTrial && isScorable) {
@@ -224,6 +238,7 @@ export function useGame() {
     stats,
     suggestedN,
     results,
+    isSpeaking,
     startSession,
     pauseSession,
     resumeSession,
