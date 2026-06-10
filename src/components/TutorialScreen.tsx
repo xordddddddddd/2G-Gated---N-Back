@@ -67,7 +67,7 @@ export function TutorialScreen({
         />
       </div>
 
-      <main className="flex-1 flex flex-col p-6 gap-6 max-w-lg mx-auto w-full">
+      <main className="flex-1 flex flex-col p-4 sm:p-6 gap-6 max-w-xl mx-auto w-full">
         <div className="space-y-2">
           <h2 className="text-2xl font-bold">{step.title}</h2>
           <p className="text-muted leading-relaxed">{step.body}</p>

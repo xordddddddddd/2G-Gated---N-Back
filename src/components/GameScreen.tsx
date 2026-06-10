@@ -66,7 +66,7 @@ export function GameScreen({
         />
       </div>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-6 gap-8 max-w-lg mx-auto w-full">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 gap-6 max-w-xl mx-auto w-full">
         <GateIndicator inputGate={trial.inputGate} outputGate={trial.outputGate} />
 
         <StimulusDisplay
