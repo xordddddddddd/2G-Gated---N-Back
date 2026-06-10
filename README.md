@@ -21,9 +21,18 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
+## Tutorial Mode
+
+New to gated n-back? Tap **Start Tutorial** on the menu for a guided walkthrough:
+
+1. Learn the four information streams
+2. Understand 2-back matching
+3. Practice OR, AND, and XOR output gates with hints
+4. Practice input gating with different active streams
+
 ## How to Play
 
-1. Choose your n-back level and session settings
+1. Choose your n-back level and session settings (or complete the tutorial first)
 2. Watch the four stimulus streams: grid position, letter, color, and shape
 3. Note the **input gate** — which streams are active this trial
 4. Note the **output gate** — the OR / AND / XOR rule for responding

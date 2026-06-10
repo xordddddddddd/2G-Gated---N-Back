@@ -3,10 +3,11 @@ import type { GameSettings } from '../types/game'
 interface MenuScreenProps {
   settings: GameSettings
   onStart: () => void
+  onStartTutorial: () => void
   onUpdateSettings: (partial: Partial<GameSettings>) => void
 }
 
-export function MenuScreen({ settings, onStart, onUpdateSettings }: MenuScreenProps) {
+export function MenuScreen({ settings, onStart, onStartTutorial, onUpdateSettings }: MenuScreenProps) {
   return (
     <div className="flex flex-col items-center justify-center min-h-dvh p-6">
       <div className="w-full max-w-lg space-y-8">
@@ -100,13 +101,22 @@ export function MenuScreen({ settings, onStart, onUpdateSettings }: MenuScreenPr
           </ul>
         </div>
 
-        <button
-          type="button"
-          onClick={onStart}
-          className="w-full py-4 rounded-xl bg-accent hover:bg-accent-dim text-white font-semibold text-lg transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-surface"
-        >
-          Start Training
-        </button>
+        <div className="flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={onStartTutorial}
+            className="w-full py-4 rounded-xl border-2 border-accent text-accent hover:bg-accent/10 font-semibold text-lg transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-surface"
+          >
+            Start Tutorial
+          </button>
+          <button
+            type="button"
+            onClick={onStart}
+            className="w-full py-4 rounded-xl bg-accent hover:bg-accent-dim text-white font-semibold text-lg transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-surface"
+          >
+            Start Training
+          </button>
+        </div>
       </div>
     </div>
   )

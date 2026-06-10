@@ -2,17 +2,34 @@ import { CountdownScreen } from './components/CountdownScreen'
 import { GameScreen } from './components/GameScreen'
 import { MenuScreen } from './components/MenuScreen'
 import { ResultsScreen } from './components/ResultsScreen'
+import { TutorialScreen } from './components/TutorialScreen'
 import { useGame } from './hooks/useGame'
+import { useTutorial } from './hooks/useTutorial'
 
 export default function App() {
   const game = useGame()
+  const tutorial = useTutorial(game.settings.soundEnabled)
 
   if (game.phase === 'menu') {
     return (
       <MenuScreen
         settings={game.settings}
         onStart={game.startSession}
+        onStartTutorial={() => {
+          tutorial.resetTutorial()
+          game.startTutorial()
+        }}
         onUpdateSettings={game.updateSettings}
+      />
+    )
+  }
+
+  if (game.phase === 'tutorial') {
+    return (
+      <TutorialScreen
+        {...tutorial}
+        onExit={game.resetToMenu}
+        onStartTraining={game.startSession}
       />
     )
   }

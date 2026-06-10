@@ -155,6 +155,15 @@ export function useGame() {
     setStats(null)
   }, [clearTimers])
 
+  const startTutorial = useCallback(() => {
+    clearTimers()
+    setPhase('tutorial')
+    setTrialIndex(0)
+    setResults([])
+    setFeedback(null)
+    setStats(null)
+  }, [clearTimers])
+
   const updateSettings = useCallback((partial: Partial<GameSettings>) => {
     setSettings((prev) => ({ ...prev, ...partial }))
   }, [])
@@ -219,6 +228,7 @@ export function useGame() {
     pauseSession,
     resumeSession,
     resetToMenu,
+    startTutorial,
     updateSettings,
     handleMatch,
   }

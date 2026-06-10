@@ -2,7 +2,7 @@ export type Stream = 'position' | 'letter' | 'color' | 'shape'
 
 export type OutputGate = 'or' | 'and' | 'xor'
 
-export type GamePhase = 'menu' | 'countdown' | 'playing' | 'paused' | 'results'
+export type GamePhase = 'menu' | 'tutorial' | 'countdown' | 'playing' | 'paused' | 'results'
 
 export type TrialFeedback = 'hit' | 'miss' | 'false-alarm' | 'correct-reject' | null
 
