@@ -1,4 +1,4 @@
-import type { InputGate, OutputGate, Stimulus, Trial } from '../types/game'
+import type { GameMode, InputGate, OutputGate, Stimulus, Trial } from '../types/game'
 
 export type TutorialStepKind = 'info' | 'practice'
 
@@ -15,6 +15,7 @@ export interface TutorialStep {
   nLevel?: number
   intervalMs?: number
   waitForCorrect?: boolean
+  responseMode?: 'per-stream' | 'gated'
 }
 
 const gate = (
@@ -189,6 +190,115 @@ export function getTutorialStep(index: number): TutorialStep | null {
   return TUTORIAL_STEPS[index] ?? null
 }
 
-export function getTutorialProgress(index: number): number {
-  return ((index + 1) / TUTORIAL_STEPS.length) * 100
+export function getTutorialProgress(index: number, total: number): number {
+  return ((index + 1) / total) * 100
+}
+
+const QUAD_SHAPE_PRACTICE: Trial[] = [
+  trial(stim(0, 'C', 'red', 'circle'), gate(true, true, true, true), 'or'),
+  trial(stim(4, 'H', 'blue', 'square'), gate(true, true, true, true), 'or'),
+  trial(stim(1, 'K', 'green', 'triangle'), gate(true, true, true, true), 'or'),
+  trial(stim(5, 'L', 'yellow', 'diamond'), gate(true, true, true, true), 'or'),
+  // vs trial 2: shape triangle matches → press J
+  trial(stim(3, 'Q', 'purple', 'triangle'), gate(true, true, true, true), 'or'),
+]
+
+const DUAL_PRACTICE: Trial[] = [
+  trial(stim(2, 'C', 'red', 'circle'), gate(true, true, false, false), 'or'),
+  trial(stim(6, 'H', 'blue', 'square'), gate(true, true, false, false), 'or'),
+  trial(stim(4, 'K', 'green', 'triangle'), gate(true, true, false, false), 'or'),
+  trial(stim(8, 'L', 'yellow', 'diamond'), gate(true, true, false, false), 'or'),
+  // vs trial 2: position 4 matches → press A
+  trial(stim(4, 'Q', 'purple', 'star'), gate(true, true, false, false), 'or'),
+]
+
+export const QUAD_TUTORIAL_STEPS: TutorialStep[] = [
+  {
+    id: 'quad-welcome',
+    title: 'Quad N-Back Tutorial',
+    kind: 'info',
+    body: 'Quad mode trains all four streams at once. Press the matching key when a stream matches n-back: F Color, A Position, J Shape, L Audio.',
+  },
+  {
+    id: 'quad-streams',
+    title: 'Four Streams',
+    kind: 'info',
+    body: 'Each trial shows a stimulus in the grid. Color fills the cell, position highlights a square, shape draws an icon, and audio speaks a letter.',
+    demoStimulus: stim(4, 'K', 'blue', 'diamond'),
+    demoInputGate: gate(true, true, true, true),
+    demoOutputGate: 'or',
+    hint: 'Inactive streams are dimmed on the sides. Only press keys for highlighted streams.',
+  },
+  {
+    id: 'quad-nback',
+    title: 'N-Back Matching',
+    kind: 'info',
+    body: 'Compare each trial to the one from n steps back. If shape matches n-back, press J. You can press multiple keys in one trial if several streams match.',
+    hint: 'The first n trials are warm-up — memorize the sequence.',
+  },
+  {
+    id: 'quad-practice',
+    title: 'Practice: Shape Match',
+    kind: 'practice',
+    body: 'All four streams are active. On trial 5, the shape matches 2-back — press J.',
+    hint: 'Triangle appeared 2 trials ago. Press J when you see it again.',
+    trials: QUAD_SHAPE_PRACTICE,
+    nLevel: TUTORIAL_N_LEVEL,
+    intervalMs: TUTORIAL_INTERVAL_MS,
+    waitForCorrect: true,
+    responseMode: 'per-stream',
+  },
+  {
+    id: 'quad-complete',
+    title: 'Ready for Quad',
+    kind: 'info',
+    body: 'You are ready for a full Quad session. Track all four streams and press the right keys when they match n-back.',
+  },
+]
+
+export const DUAL_TUTORIAL_STEPS: TutorialStep[] = [
+  {
+    id: 'dual-welcome',
+    title: 'Dual N-Back Tutorial',
+    kind: 'info',
+    body: 'Dual mode uses Position and Audio only. Press A when position matches n-back, L when the spoken letter matches.',
+  },
+  {
+    id: 'dual-streams',
+    title: 'Position + Audio',
+    kind: 'info',
+    body: 'Watch which grid cell is highlighted for position. Listen for the spoken letter each trial.',
+    demoStimulus: stim(4, 'R', 'blue', 'circle'),
+    demoInputGate: gate(true, true, false, false),
+    demoOutputGate: 'or',
+  },
+  {
+    id: 'dual-practice',
+    title: 'Practice: Position Match',
+    kind: 'practice',
+    body: 'Position and audio are active with OR rule. Trial 5 has a position match — press A.',
+    trials: DUAL_PRACTICE,
+    nLevel: TUTORIAL_N_LEVEL,
+    intervalMs: TUTORIAL_INTERVAL_MS,
+    waitForCorrect: true,
+    responseMode: 'per-stream',
+  },
+  {
+    id: 'dual-complete',
+    title: 'Ready for Dual',
+    kind: 'info',
+    body: 'Start a Dual session when you are ready. Focus on position and audio together.',
+  },
+]
+
+export function getTutorialSteps(gameMode: GameMode): TutorialStep[] {
+  switch (gameMode) {
+    case 'quad':
+      return QUAD_TUTORIAL_STEPS
+    case 'dual':
+      return DUAL_TUTORIAL_STEPS
+    case '2g':
+    default:
+      return TUTORIAL_STEPS
+  }
 }

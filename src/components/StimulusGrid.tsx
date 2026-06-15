@@ -1,21 +1,39 @@
 import { CELL_PX, COLORS, GRID_PX } from '../lib/constants'
 import { ShapeIcon } from './ShapeIcon'
-import type { InputGate, Stimulus } from '../types/game'
+import type { GameMode, InputGate, Stimulus } from '../types/game'
 
 interface StimulusGridProps {
   stimulus: Stimulus
   inputGate: InputGate
   idle?: boolean
+  gameMode?: GameMode
 }
 
-export function StimulusGrid({ stimulus, inputGate, idle = false }: StimulusGridProps) {
+function shapeFillColor(
+  gameMode: GameMode,
+  inputGate: InputGate,
+  colorHex: string,
+  onWhiteCell: boolean,
+): string {
+  if (gameMode === 'quad') {
+    return onWhiteCell ? '#1a1a1a' : '#ffffff'
+  }
+  if (inputGate.color) return colorHex
+  return '#ffffff'
+}
+
+export function StimulusGrid({
+  stimulus,
+  inputGate,
+  idle = false,
+  gameMode = 'quad',
+}: StimulusGridProps) {
   const color = COLORS.find((c) => c.id === stimulus.color) ?? COLORS[0]
   const cells = Array.from({ length: 9 }, (_, i) => i)
   const activePosition = stimulus.position
   const showShape = !idle && inputGate.shape
   const showColorDot = !idle && inputGate.color && !inputGate.shape
   const showColorShape = !idle && inputGate.color && inputGate.shape
-  const shapeColor = inputGate.color ? color.hex : '#111111'
   const shapeSize = Math.round(CELL_PX * 0.72)
 
   return (
@@ -34,6 +52,8 @@ export function StimulusGrid({ stimulus, inputGate, idle = false }: StimulusGrid
       {cells.map((i) => {
         const isActive = !idle && i === activePosition
         const highlightPosition = isActive && inputGate.position
+        const onWhiteCell = Boolean(highlightPosition)
+        const shapeColor = shapeFillColor(gameMode, inputGate, color.hex, onWhiteCell)
 
         return (
           <div

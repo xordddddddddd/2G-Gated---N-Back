@@ -1,7 +1,7 @@
 import { GRID_PX } from '../lib/constants'
 import { getKeyForStream } from '../lib/response'
 import { createIdleGate, createIdleStimulus } from '../lib/sequence'
-import { GateBar } from './GateBar'
+import { GateOverlay } from './GateOverlay'
 import { StimulusCube3D } from './StimulusCube3D'
 import { StimulusGrid } from './StimulusGrid'
 import { StreamKeyPanel } from './StreamKeyPanel'
@@ -19,6 +19,7 @@ interface QuadBoardProps {
   isPlaying?: boolean
   onPlay?: () => void
   onStop?: () => void
+  showGateOverlay?: boolean
 }
 
 export function QuadBoard({
@@ -33,12 +34,15 @@ export function QuadBoard({
   isPlaying = false,
   onPlay,
   onStop,
+  showGateOverlay = true,
 }: QuadBoardProps) {
   const keys = settings.keys
   const gate = idle ? createIdleGate() : inputGate
   const displayStimulus = idle ? createIdleStimulus() : stimulus
   const showGates =
-    settings.gameMode === '2g' || (settings.enableInputGating && !idle)
+    showGateOverlay &&
+    (settings.gameMode === '2g' || settings.enableInputGating || settings.gameMode === 'quad') &&
+    !idle
 
   const stimulusDisplay =
     settings.gridMode === '3d' ? (
@@ -47,18 +51,20 @@ export function QuadBoard({
         inputGate={gate}
         idle={idle}
         rotationSpeed={settings.rotationSpeed}
+        gameMode={settings.gameMode}
       />
     ) : (
-      <StimulusGrid stimulus={displayStimulus} inputGate={gate} idle={idle} />
+      <StimulusGrid
+        stimulus={displayStimulus}
+        inputGate={gate}
+        idle={idle}
+        gameMode={settings.gameMode}
+      />
     )
 
   return (
     <div className="flex items-center justify-center gap-10">
-      {/* Left column: Color + Position */}
-      <div
-        className="flex flex-col justify-between shrink-0"
-        style={{ height: GRID_PX }}
-      >
+      <div className="flex flex-col justify-between shrink-0" style={{ height: GRID_PX }}>
         <StreamKeyPanel
           stream="color"
           keyLabel={getKeyForStream('color', keys)}
@@ -79,18 +85,11 @@ export function QuadBoard({
         />
       </div>
 
-      {/* Center: gate bar + grid */}
-      <div className="flex flex-col items-center shrink-0">
-        <GateBar
-          gameMode={settings.gameMode}
-          inputGate={gate}
-          outputGate={outputGate}
-          visible={showGates && !idle}
-        />
+      <div className="relative shrink-0">
         {stimulusDisplay}
+        <GateOverlay outputGate={outputGate} visible={showGates} />
       </div>
 
-      {/* Right column: Play/Stop + Shape + Audio */}
       <div
         className="flex flex-col justify-between items-center shrink-0"
         style={{ height: GRID_PX }}
@@ -148,6 +147,7 @@ export function QuadBoardFromTrial({
   isPlaying,
   onPlay,
   onStop,
+  showGateOverlay,
 }: {
   trial: Trial | null
   settings: GameSettings
@@ -158,6 +158,7 @@ export function QuadBoardFromTrial({
   isPlaying?: boolean
   onPlay?: () => void
   onStop?: () => void
+  showGateOverlay?: boolean
 }) {
   const stimulus = trial?.stimulus ?? createIdleStimulus()
   const inputGate = trial?.inputGate ?? createIdleGate()
@@ -176,6 +177,7 @@ export function QuadBoardFromTrial({
       isPlaying={isPlaying}
       onPlay={onPlay}
       onStop={onStop}
+      showGateOverlay={showGateOverlay}
     />
   )
 }

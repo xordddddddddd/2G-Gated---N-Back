@@ -93,6 +93,8 @@ export const DEFAULT_SETTINGS: GameSettings = {
   autoProgression: true,
   autoProgressionThreshold: 0.8,
   winAfter: 1,
+  loseAfter: 2,
+  tutorialMode: false,
   soundEnabled: true,
   adaptive: true,
   feedbackSounds: true,

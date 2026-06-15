@@ -38,9 +38,8 @@ export function TutorialScreen({
   startPractice,
   handleMatch,
   continueFromFeedback,
-  isSpeaking = false,
 }: TutorialScreenProps) {
-  const progress = getTutorialProgress(stepIndex)
+  const progress = getTutorialProgress(stepIndex, totalSteps)
 
   return (
     <div className="flex flex-col min-h-dvh">
@@ -153,7 +152,6 @@ export function TutorialScreen({
             <StimulusDisplay
               stimulus={currentTrial.stimulus}
               inputGate={currentTrial.inputGate}
-              isSpeaking={isSpeaking}
             />
 
             <p className="text-sm text-muted text-center">

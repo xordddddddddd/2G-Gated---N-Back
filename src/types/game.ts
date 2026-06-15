@@ -8,7 +8,7 @@ export type ResponseMode = 'per-stream' | 'gated'
 
 export type GameMode = 'quad' | 'dual' | '2g'
 
-export type GamePhase = 'ready' | 'playing' | 'paused' | 'results'
+export type GamePhase = 'ready' | 'playing' | 'paused' | 'results' | 'tutorial'
 
 export type TrialFeedback = 'hit' | 'miss' | 'false-alarm' | 'correct-reject' | null
 
@@ -72,6 +72,8 @@ export interface GameSettings {
   autoProgression: boolean
   autoProgressionThreshold: number
   winAfter: number
+  loseAfter: number
+  tutorialMode: boolean
   soundEnabled: boolean
   adaptive: boolean
   feedbackSounds: boolean
