@@ -124,5 +124,5 @@
 }
 
 .grid3d-gate > * {
-  translate: 0 0 11svmin;
+  transform: translateZ(11svmin);
 }

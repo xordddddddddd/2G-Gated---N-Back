@@ -27,10 +27,12 @@ export function layerToStyle(layer: Layer3DStyle): CSSProperties {
   }
 }
 
-export function positionKeyToStyle(key: string): CSSProperties {
+export function positionKeyToTransform(key: string): string {
   const [xs, ys, zs] = key.split('-').map(Number)
   const u = 20.1
-  return {
-    translate: `${(xs - 1) * u}svmin ${(ys - 1) * u}svmin ${(zs - 1) * u}svmin`,
-  }
+  return `translate3d(${(xs - 1) * u}svmin, ${(ys - 1) * u}svmin, ${(zs - 1) * u}svmin)`
+}
+
+export function positionKeyToStyle(key: string): CSSProperties {
+  return { transform: positionKeyToTransform(key) }
 }
