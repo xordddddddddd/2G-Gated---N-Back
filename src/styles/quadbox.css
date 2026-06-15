@@ -149,9 +149,11 @@
   transform: translateY(1px);
 }
 
-.qb-key-btn:disabled {
+.qb-key-btn:disabled,
+.qb-key-btn.qb-key-disabled {
   opacity: 0.35;
   cursor: default;
+  pointer-events: none;
 }
 
 .qb-key-btn.qb-wrong {

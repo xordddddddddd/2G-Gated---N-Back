@@ -35,23 +35,31 @@ function buildStreamCorrect(
 }
 
 function getWrongStreams(
-  streamCorrect: Partial<Record<Stream, boolean>>,
+  streamMatchesMap: Record<Stream, boolean>,
+  pressed: Set<Stream>,
   activeStreams: Stream[],
 ): Set<Stream> {
   const wrong = new Set<Stream>()
   for (const stream of activeStreams) {
-    if (streamCorrect[stream] === false) wrong.add(stream)
+    const shouldMatch = streamMatchesMap[stream]
+    const didPress = pressed.has(stream)
+    if ((shouldMatch && !didPress) || (!shouldMatch && didPress)) {
+      wrong.add(stream)
+    }
   }
   return wrong
 }
 
 function getCorrectStreams(
-  streamCorrect: Partial<Record<Stream, boolean>>,
+  streamMatchesMap: Record<Stream, boolean>,
+  pressed: Set<Stream>,
   activeStreams: Stream[],
 ): Set<Stream> {
   const correct = new Set<Stream>()
   for (const stream of activeStreams) {
-    if (streamCorrect[stream] === true) correct.add(stream)
+    if (streamMatchesMap[stream] && pressed.has(stream)) {
+      correct.add(stream)
+    }
   }
   return correct
 }
@@ -77,7 +85,6 @@ export function useGame() {
   const [, setConsecutiveWins] = useState(0)
   const [, setConsecutiveLosses] = useState(0)
 
-  const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const stopTrialClockRef = useRef<(() => void) | null>(null)
   const trialClockIdRef = useRef(0)
   const speakTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -104,10 +111,6 @@ export function useGame() {
     stopTrialClockRef.current?.()
     stopTrialClockRef.current = null
     cancelTrialClock()
-    if (advanceTimeoutRef.current) {
-      clearTimeout(advanceTimeoutRef.current)
-      advanceTimeoutRef.current = null
-    }
     if (speakTimeoutRef.current) {
       clearTimeout(speakTimeoutRef.current)
       speakTimeoutRef.current = null
@@ -190,6 +193,8 @@ export function useGame() {
         currentTrial.inputGate,
       )
       streamCorrect = buildStreamCorrect(pressed, streamMatchesMap, currentTrial.inputGate)
+      setCorrectStreams(getCorrectStreams(streamMatchesMap, pressed, activeStreams))
+      setWrongStreams(getWrongStreams(streamMatchesMap, pressed, activeStreams))
     } else {
       const streamMatchesMap = getStreamMatchesForTrial(
         currentTrial.stimulus,
@@ -205,10 +210,9 @@ export function useGame() {
       correct = result.correct
       shouldMatch = Object.values(streamMatchesMap).some(Boolean)
       streamCorrect = buildStreamCorrect(pressed, streamMatchesMap, currentTrial.inputGate)
+      setCorrectStreams(getCorrectStreams(streamMatchesMap, pressed, activeStreams))
+      setWrongStreams(getWrongStreams(streamMatchesMap, pressed, activeStreams))
     }
-
-    setCorrectStreams(getCorrectStreams(streamCorrect, activeStreams))
-    setWrongStreams(getWrongStreams(streamCorrect, activeStreams))
 
     if (settings.feedbackMode === 'hide') {
       setFeedback(null)
@@ -441,27 +445,27 @@ export function useGame() {
     }
 
     stopTrialClockRef.current?.()
-    stopTrialClockRef.current = startTrialClock(clockId, settings.intervalMs, (id) => {
-      if (trialClockIdRef.current !== id) return
-      if (!respondedThisTrialRef.current && scorable) {
-        finishTrialRef.current()
-      }
-      advanceTimeoutRef.current = setTimeout(() => {
-        if (trialClockIdRef.current === id) {
+    stopTrialClockRef.current = startTrialClock(
+      clockId,
+      settings.intervalMs,
+      200,
+      (event) => {
+        if (trialClockIdRef.current !== event.clockId) return
+        if (event.type === 'finish') {
+          if (!respondedThisTrialRef.current && scorable) {
+            finishTrialRef.current()
+          }
+        } else if (event.type === 'advance') {
           advanceTrialRef.current()
         }
-      }, 200)
-    })
+      },
+    )
 
     return () => {
       trialClockIdRef.current += 1
       stopTrialClockRef.current?.()
       stopTrialClockRef.current = null
       cancelTrialClock()
-      if (advanceTimeoutRef.current) {
-        clearTimeout(advanceTimeoutRef.current)
-        advanceTimeoutRef.current = null
-      }
       if (speakTimeoutRef.current) {
         clearTimeout(speakTimeoutRef.current)
         speakTimeoutRef.current = null

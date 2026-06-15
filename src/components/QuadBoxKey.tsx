@@ -26,14 +26,16 @@ export function QuadBoxKey({
   const pointerPress = usePointerPress(onPress, isDisabled)
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={isDisabled ? -1 : 0}
+      aria-disabled={isDisabled}
       {...pointerPress}
-      disabled={isDisabled}
       className={[
         'qb-key-btn',
         correct ? 'qb-correct' : '',
         wrong ? 'qb-wrong' : '',
+        isDisabled ? 'qb-key-disabled' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -43,6 +45,6 @@ export function QuadBoxKey({
       <span />
       <span className="qb-key-letter">{keyLabel}</span>
       <span />
-    </button>
+    </div>
   )
 }

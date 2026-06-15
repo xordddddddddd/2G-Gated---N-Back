@@ -9,7 +9,7 @@ export function usePointerPress(onPress: () => void, disabled = false) {
 
   return useMemo(
     () => ({
-      onPointerDown: (e: PointerEvent<HTMLButtonElement>) => {
+      onPointerDown: (e: PointerEvent<HTMLElement>) => {
         if (disabled || e.button !== 0) return
         e.preventDefault()
         pointerPressedRef.current = true
@@ -21,7 +21,10 @@ export function usePointerPress(onPress: () => void, disabled = false) {
       onPointerCancel: () => {
         pointerPressedRef.current = false
       },
-      onClick: (e: MouseEvent<HTMLButtonElement>) => {
+      onPointerLeave: () => {
+        pointerPressedRef.current = false
+      },
+      onClick: (e: MouseEvent<HTMLElement>) => {
         e.preventDefault()
         if (pointerPressedRef.current) {
           pointerPressedRef.current = false

@@ -29,10 +29,11 @@ export function StreamKeyPanel({
   const pointerPress = usePointerPress(onPress, isDisabled)
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={isDisabled ? -1 : 0}
+      aria-disabled={isDisabled}
       {...pointerPress}
-      disabled={isDisabled}
       className={[
         'flex flex-col items-center justify-center gap-3 select-none rounded-lg px-2 py-1',
         'focus:outline-none focus-visible:ring-1 focus-visible:ring-white/40',
@@ -71,6 +72,6 @@ export function StreamKeyPanel({
       >
         {keyLabel}
       </span>
-    </button>
+    </div>
   )
 }
