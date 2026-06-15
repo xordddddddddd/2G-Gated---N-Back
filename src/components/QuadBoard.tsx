@@ -12,6 +12,7 @@ interface QuadBoardProps {
   outputGate?: Trial['outputGate']
   settings: GameSettings
   pressedStreams: Set<Stream>
+  wrongStreams?: Set<Stream>
   onStreamPress: (stream: Stream) => void
   idle?: boolean
   interactive?: boolean
@@ -27,6 +28,7 @@ export function QuadBoard({
   outputGate = 'or',
   settings,
   pressedStreams,
+  wrongStreams = new Set(),
   onStreamPress,
   idle = false,
   interactive = true,
@@ -73,6 +75,7 @@ export function QuadBoard({
           keyLabel={getKeyForStream('color', keys)}
           active={gate.color}
           pressed={pressedStreams.has('color')}
+          wrong={wrongStreams.has('color')}
           onPress={() => onStreamPress('color')}
           layout="left"
           disabled={!interactive}
@@ -82,6 +85,7 @@ export function QuadBoard({
           keyLabel={getKeyForStream('position', keys)}
           active={gate.position}
           pressed={pressedStreams.has('position')}
+          wrong={wrongStreams.has('position')}
           onPress={() => onStreamPress('position')}
           layout="left"
           disabled={!interactive}
@@ -120,6 +124,7 @@ export function QuadBoard({
             keyLabel={getKeyForStream('shape', keys)}
             active={gate.shape}
             pressed={pressedStreams.has('shape')}
+            wrong={wrongStreams.has('shape')}
             onPress={() => onStreamPress('shape')}
             layout="right"
             disabled={!interactive}
@@ -129,6 +134,7 @@ export function QuadBoard({
             keyLabel={getKeyForStream('letter', keys)}
             active={gate.letter}
             pressed={pressedStreams.has('letter')}
+            wrong={wrongStreams.has('letter')}
             onPress={() => onStreamPress('letter')}
             layout="right"
             disabled={!interactive}
@@ -143,6 +149,7 @@ export function QuadBoardFromTrial({
   trial,
   settings,
   pressedStreams,
+  wrongStreams = new Set(),
   onStreamPress,
   idle,
   interactive,
@@ -154,6 +161,7 @@ export function QuadBoardFromTrial({
   trial: Trial | null
   settings: GameSettings
   pressedStreams: Set<Stream>
+  wrongStreams?: Set<Stream>
   onStreamPress: (stream: Stream) => void
   idle?: boolean
   interactive?: boolean
@@ -173,6 +181,7 @@ export function QuadBoardFromTrial({
       outputGate={outputGate}
       settings={settings}
       pressedStreams={pressedStreams}
+      wrongStreams={wrongStreams}
       onStreamPress={onStreamPress}
       idle={idle ?? !trial}
       interactive={interactive}

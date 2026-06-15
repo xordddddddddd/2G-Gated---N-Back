@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { playFeedback, resumeAudio, speakLetter, stopSpeech } from '../lib/audio'
+import { resumeAudio, speakLetter, stopSpeech } from '../lib/audio'
 import { shouldRespond, getActiveStreams } from '../lib/gating'
 import {
   evaluatePerStreamResponse,
@@ -134,10 +134,6 @@ export function useTutorial(settings: Pick<GameSettings, 'gameMode' | 'soundEnab
 
       const { trialFeedback, message, correct } = result
       const needsRetry = !correct && Boolean(step.waitForCorrect)
-
-      if (trialFeedback === 'hit' || trialFeedback === 'correct-reject') playFeedback('hit')
-      else if (trialFeedback === 'miss') playFeedback('miss')
-      else playFeedback('false-alarm')
 
       setRespondedThisTrial(true)
       setFeedback(trialFeedback)

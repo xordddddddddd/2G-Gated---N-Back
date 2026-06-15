@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { playFeedback, resumeAudio, setVoicePreference, speakLetter, stopSpeech } from '../lib/audio'
+import { resumeAudio, setVoicePreference, speakLetter, stopSpeech } from '../lib/audio'
 import { getGameLabel } from '../lib/constants'
 import { shouldRespond, getActiveStreams } from '../lib/gating'
 import { addPlayTime, getTodayPlayTimeMs, saveSession } from '../lib/history'
@@ -33,6 +33,17 @@ function buildStreamCorrect(
   return result
 }
 
+function getWrongStreams(
+  streamCorrect: Partial<Record<Stream, boolean>>,
+  activeStreams: Stream[],
+): Set<Stream> {
+  const wrong = new Set<Stream>()
+  for (const stream of activeStreams) {
+    if (streamCorrect[stream] === false) wrong.add(stream)
+  }
+  return wrong
+}
+
 export function useGame() {
   const [phase, setPhase] = useState<GamePhase>('ready')
   const [settings, setSettings] = useState<GameSettings>(() => {
@@ -46,6 +57,7 @@ export function useGame() {
   const [feedback, setFeedback] = useState<TrialFeedback>(null)
   const [respondedThisTrial, setRespondedThisTrial] = useState(false)
   const [pressedStreams, setPressedStreams] = useState<Set<Stream>>(new Set())
+  const [wrongStreams, setWrongStreams] = useState<Set<Stream>>(new Set())
   const [stats, setStats] = useState<SessionStats | null>(null)
   const [suggestedN, setSuggestedN] = useState(settings.nLevel)
   const [todayPlayMs, setTodayPlayMs] = useState(() => getTodayPlayTimeMs())
@@ -135,15 +147,12 @@ export function useGame() {
       if (shouldMatch && responded) {
         trialFeedback = 'hit'
         correct = true
-        if (settings.feedbackSounds) playFeedback('hit')
       } else if (shouldMatch && !responded) {
         trialFeedback = 'miss'
         correct = false
-        if (settings.feedbackSounds) playFeedback('miss')
       } else if (!shouldMatch && responded) {
         trialFeedback = 'false-alarm'
         correct = false
-        if (settings.feedbackSounds) playFeedback('false-alarm')
       } else {
         trialFeedback = 'correct-reject'
         correct = true
@@ -169,11 +178,12 @@ export function useGame() {
       correct = result.correct
       shouldMatch = Object.values(streamMatchesMap).some(Boolean)
       streamCorrect = buildStreamCorrect(pressedStreams, streamMatchesMap, currentTrial.inputGate)
-      if (settings.feedbackSounds) {
-        if (result.feedback === 'hit' || result.feedback === 'correct-reject') playFeedback('hit')
-        else if (result.feedback === 'miss') playFeedback('miss')
-        else playFeedback('false-alarm')
-      }
+    }
+
+    if (!correct) {
+      setWrongStreams(getWrongStreams(streamCorrect, activeStreams))
+    } else {
+      setWrongStreams(new Set())
     }
 
     if (settings.feedbackMode === 'hide') {
@@ -306,6 +316,7 @@ export function useGame() {
     setFeedback(null)
     setRespondedThisTrial(false)
     setPressedStreams(new Set())
+    setWrongStreams(new Set())
 
     if (trialIndex + 1 >= trials.length) {
       endSession(false)
@@ -326,6 +337,7 @@ export function useGame() {
     setFeedback(null)
     setRespondedThisTrial(false)
     setPressedStreams(new Set())
+    setWrongStreams(new Set())
     setStats(null)
     sessionStartRef.current = Date.now()
     setPhase('playing')
@@ -458,6 +470,7 @@ export function useGame() {
     todayPlayMs,
     isPlaying,
     pressedStreams,
+    wrongStreams,
     handlePlay,
     startSession,
     stopSession,
