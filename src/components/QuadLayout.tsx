@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { formatPlayTime } from '../lib/history'
 import { QuadBoardFromTrial } from './QuadBoard'
 import { SettingsSidebar } from './SettingsSidebar'
@@ -47,6 +47,42 @@ export function QuadLayout({
 
   const modeLabel =
     settings.gameMode === 'quad' ? 'QUAD' : settings.gameMode === 'dual' ? 'DUAL' : '2G'
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      const tag = target.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable) {
+        return
+      }
+
+      if (e.code === 'Escape') {
+        if (statsOpen) {
+          e.preventDefault()
+          setStatsOpen(false)
+          return
+        }
+        if (settingsOpen) {
+          e.preventDefault()
+          setSettingsOpen(false)
+          return
+        }
+        if (isPlaying) {
+          e.preventDefault()
+          stopSession()
+        }
+        return
+      }
+
+      if (e.code === 'Space' && !isPlaying) {
+        e.preventDefault()
+        handlePlay()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [statsOpen, settingsOpen, isPlaying, handlePlay, stopSession])
 
   return (
     <div className="flex min-h-dvh bg-[#1a1a1a] text-white">
@@ -109,6 +145,8 @@ export function QuadLayout({
         {helpOpen && (
           <div className="px-6 py-2 text-xs text-white/50 border-b border-white/10 text-center">
             Press <b>A</b> Position · <b>F</b> Color · <b>J</b> Shape · <b>L</b> Audio when they match n-back.
+            {' · '}
+            <b>Space</b> Play · <b>Esc</b> Stop
             <button type="button" onClick={() => setHelpOpen(false)} className="ml-3 underline">
               dismiss
             </button>
