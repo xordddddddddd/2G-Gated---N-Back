@@ -100,10 +100,16 @@ export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onTogg
     onUpdate({
       gameMode: next,
       ...(next === '2g'
-        ? { enableInputGating: true, responseMode: 'gated' as const }
-        : next === 'quad'
-          ? { responseMode: 'per-stream' as const }
-          : {}),
+        ? {
+            enableInputGating: true,
+            responseMode: 'gated' as const,
+            outputGateMode: 'random' as const,
+          }
+        : {
+            enableInputGating: false,
+            responseMode: 'per-stream' as const,
+            outputGateMode: 'or' as const,
+          }),
     })
   }
 

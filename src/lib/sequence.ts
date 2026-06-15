@@ -38,6 +38,9 @@ function pickInputGate(
       shape: false,
     }
   }
+  if (settings.gameMode === 'quad') {
+    return { ...settings.enabledStreams }
+  }
   if (!settings.enableInputGating) {
     return { ...settings.enabledStreams }
   }
