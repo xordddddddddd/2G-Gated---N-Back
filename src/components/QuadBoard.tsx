@@ -45,6 +45,8 @@ export function QuadBoard({
     (settings.gameMode === '2g' || settings.enableInputGating || settings.gameMode === 'quad') &&
     !idle
 
+  const boardHeight = settings.gridMode === '3d' ? '60.3svmin' : GRID_PX
+
   const stimulusDisplay =
     settings.gridMode === '3d' ? (
       <StimulusCube3D
@@ -56,6 +58,7 @@ export function QuadBoard({
         outputGate={outputGate}
         showGate={showGates}
         gridMode={settings.gridMode}
+        flash={wrongStreams.has('position') || wrongStreams.has('color') || wrongStreams.has('shape')}
       />
     ) : (
       <StimulusGrid
@@ -70,7 +73,7 @@ export function QuadBoard({
 
   return (
     <div className="flex items-center justify-center gap-10">
-      <div className="flex flex-col justify-between shrink-0" style={{ height: GRID_PX }}>
+      <div className="flex flex-col justify-between shrink-0" style={{ height: boardHeight }}>
         <StreamKeyPanel
           stream="color"
           keyLabel={getKeyForStream('color', keys)}
@@ -99,7 +102,7 @@ export function QuadBoard({
 
       <div
         className="flex flex-col justify-between items-center shrink-0"
-        style={{ height: GRID_PX }}
+        style={{ height: boardHeight }}
       >
         {isPlaying ? (
           <button

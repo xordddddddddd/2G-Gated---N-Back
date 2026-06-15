@@ -216,9 +216,9 @@ export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onTogg
           <SliderRow
             label="Rotation speed"
             value={settings.rotationSpeed}
-            min={5}
-            max={80}
-            step={5}
+            min={1}
+            max={140}
+            step={1}
             format={(v) => String(v)}
             onChange={(rotationSpeed) => onUpdate({ rotationSpeed })}
           />
