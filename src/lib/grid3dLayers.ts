@@ -1,38 +1,14 @@
-import type { CSSProperties } from 'react'
-
-export interface Layer3DStyle {
-  translate: string
-  rotate?: string
-}
-
-export const FRAME_LAYERS: Layer3DStyle[] = [
-  { translate: '0 0 -30.15svmin' },
-  { translate: '0 0 -10.05svmin' },
-  { translate: '0 0 10.05svmin' },
-  { translate: '0 0 30.15svmin' },
-  { translate: '0 -30.15svmin 0', rotate: 'x 90deg' },
-  { translate: '0 -10.05svmin 0', rotate: 'x 90deg' },
-  { translate: '0 10.05svmin 0', rotate: 'x 90deg' },
-  { translate: '0 30.15svmin 0', rotate: 'x 90deg' },
-  { translate: '-30.15svmin 0 0', rotate: 'y 90deg' },
-  { translate: '-10.05svmin 0 0', rotate: 'y 90deg' },
-  { translate: '10.05svmin 0 0', rotate: 'y 90deg' },
-  { translate: '30.15svmin 0 0', rotate: 'y 90deg' },
-]
-
-export function layerToStyle(layer: Layer3DStyle): CSSProperties {
-  return {
-    translate: layer.translate,
-    ...(layer.rotate ? { rotate: layer.rotate } : {}),
-  }
-}
-
-export function positionKeyToTransform(key: string): string {
-  const [xs, ys, zs] = key.split('-').map(Number)
-  const u = 20.1
-  return `translate3d(${(xs - 1) * u}svmin, ${(ys - 1) * u}svmin, ${(zs - 1) * u}svmin)`
-}
-
-export function positionKeyToStyle(key: string): CSSProperties {
-  return { transform: positionKeyToTransform(key) }
-}
+export const FRAME_LAYER_CLASSES = [
+  'grid3d-fr-z0',
+  'grid3d-fr-z1',
+  'grid3d-fr-z2',
+  'grid3d-fr-z3',
+  'grid3d-fr-y0',
+  'grid3d-fr-y1',
+  'grid3d-fr-y2',
+  'grid3d-fr-y3',
+  'grid3d-fr-x0',
+  'grid3d-fr-x1',
+  'grid3d-fr-x2',
+  'grid3d-fr-x3',
+] as const

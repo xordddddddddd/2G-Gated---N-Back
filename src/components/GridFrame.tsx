@@ -1,18 +1,17 @@
 interface GridFrameProps {
-  style: React.CSSProperties
+  layerClass: string
 }
 
-export function GridFrame({ style }: GridFrameProps) {
+export function GridFrame({ layerClass }: GridFrameProps) {
   const frameUrl = `${import.meta.env.BASE_URL}frame-dark.svg`
 
   return (
-    <div
-      className="grid3d-frame"
-      style={{
-        ...style,
-        backgroundImage: `url('${frameUrl}')`,
-      }}
+    <img
+      src={frameUrl}
+      alt=""
       aria-hidden
+      draggable={false}
+      className={`grid3d-frame ${layerClass}`}
     />
   )
 }

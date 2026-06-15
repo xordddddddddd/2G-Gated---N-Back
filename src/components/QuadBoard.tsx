@@ -94,7 +94,7 @@ export function QuadBoard({
         />
       </div>
 
-      <div className="relative shrink-0 w-[60.3svmin] h-[60.3svmin]">
+      <div className="relative shrink-0 w-[60.3svmin] h-[60.3svmin] flex items-center justify-center">
         {stimulusDisplay}
       </div>
 

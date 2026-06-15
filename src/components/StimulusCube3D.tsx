@@ -6,8 +6,7 @@ import {
   rotationDurationSec,
   toDisplayPosition,
 } from '../lib/grid3d'
-import { FRAME_LAYERS, layerToStyle, positionKeyToStyle } from '../lib/grid3dLayers'
-import { GateCellContent } from './GateOverlay'
+import { FRAME_LAYER_CLASSES } from '../lib/grid3dLayers'
 import { GridCell3D } from './GridCell3D'
 import { GridFrame } from './GridFrame'
 import type { GameMode, GridMode, InputGate, OutputGate, Stimulus } from '../types/game'
@@ -57,8 +56,6 @@ export function StimulusCube3D({
   idle = false,
   rotationSpeed = 35,
   gameMode = 'quad',
-  outputGate = 'or',
-  showGate = false,
   gridMode = '3d',
   flash = false,
 }: StimulusCube3DProps) {
@@ -94,14 +91,8 @@ export function StimulusCube3D({
           />
         )}
 
-        {showGate && (
-          <div className="grid3d-gate" style={positionKeyToStyle('1-1-1')}>
-            <GateCellContent outputGate={outputGate} visible={showGate} />
-          </div>
-        )}
-
-        {FRAME_LAYERS.map((layer, i) => (
-          <GridFrame key={i} style={layerToStyle(layer)} />
+        {FRAME_LAYER_CLASSES.map((layerClass) => (
+          <GridFrame key={layerClass} layerClass={layerClass} />
         ))}
       </div>
     </div>

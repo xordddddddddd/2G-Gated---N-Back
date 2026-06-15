@@ -1,15 +1,13 @@
-/* 3D grid — matches Quad Box rotate3D (CSS translate/rotate properties) */
+/* 3D grid — Quad Box rotate3D */
 
 .grid3d-viewport {
-  position: relative;
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  min-width: 60.3svmin;
-  min-height: 60.3svmin;
   perspective: 60svmin;
+  perspective-origin: 50% 50%;
   overflow: hidden;
 }
 
@@ -41,10 +39,59 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
+  display: block;
+  object-fit: fill;
   pointer-events: none;
   user-select: none;
+}
+
+/* Frame slices — Quad Box: translate property + rotation in transform (not rotate property) */
+.grid3d-fr-z0 { translate: 0 0 -30.15svmin; }
+.grid3d-fr-z1 { translate: 0 0 -10.05svmin; }
+.grid3d-fr-z2 { translate: 0 0 10.05svmin; }
+.grid3d-fr-z3 { translate: 0 0 30.15svmin; }
+.grid3d-fr-y0 { translate: 0 -30.15svmin 0; transform: rotateX(90deg); }
+.grid3d-fr-y1 { translate: 0 -10.05svmin 0; transform: rotateX(90deg); }
+.grid3d-fr-y2 { translate: 0 10.05svmin 0; transform: rotateX(90deg); }
+.grid3d-fr-y3 { translate: 0 30.15svmin 0; transform: rotateX(90deg); }
+.grid3d-fr-x0 { translate: -30.15svmin 0 0; transform: rotateY(90deg); }
+.grid3d-fr-x1 { translate: -10.05svmin 0 0; transform: rotateY(90deg); }
+.grid3d-fr-x2 { translate: 10.05svmin 0 0; transform: rotateY(90deg); }
+.grid3d-fr-x3 { translate: 30.15svmin 0 0; transform: rotateY(90deg); }
+
+@supports not (translate: 0 0 1px) {
+  .grid3d-scene {
+    translate: none;
+    animation: grid3d-spin-fallback linear infinite;
+  }
+
+  @keyframes grid3d-spin-fallback {
+    from {
+      transform: translateZ(-10svmin)
+        rotateX(var(--rotation-start-x, 0deg))
+        rotateY(var(--rotation-start-y, 0deg))
+        rotateZ(var(--rotation-start-z, 0deg));
+    }
+    to {
+      transform: translateZ(-10svmin)
+        rotateX(calc(var(--rotation-start-x, 0deg) + 360deg))
+        rotateY(calc(var(--rotation-start-y, 0deg) + 360deg))
+        rotateZ(calc(var(--rotation-start-z, 0deg) + 360deg));
+    }
+  }
+
+  .grid3d-fr-z0 { transform: translateZ(-30.15svmin); }
+  .grid3d-fr-z1 { transform: translateZ(-10.05svmin); }
+  .grid3d-fr-z2 { transform: translateZ(10.05svmin); }
+  .grid3d-fr-z3 { transform: translateZ(30.15svmin); }
+  .grid3d-fr-y0 { translate: none; transform: translateY(-30.15svmin) rotateX(90deg); }
+  .grid3d-fr-y1 { translate: none; transform: translateY(-10.05svmin) rotateX(90deg); }
+  .grid3d-fr-y2 { translate: none; transform: translateY(10.05svmin) rotateX(90deg); }
+  .grid3d-fr-y3 { translate: none; transform: translateY(30.15svmin) rotateX(90deg); }
+  .grid3d-fr-x0 { translate: none; transform: translateX(-30.15svmin) rotateY(90deg); }
+  .grid3d-fr-x1 { translate: none; transform: translateX(-10.05svmin) rotateY(90deg); }
+  .grid3d-fr-x2 { translate: none; transform: translateX(10.05svmin) rotateY(90deg); }
+  .grid3d-fr-x3 { translate: none; transform: translateX(30.15svmin) rotateY(90deg); }
 }
 
 .grid3d-cell {
@@ -63,34 +110,20 @@
   transform-style: flat;
 }
 
-/* Cube faces — Quad Box Cell.svelte order */
-.grid3d-face-front {
-  translate: 0 0 10svmin;
-}
+.grid3d-face-front { translate: 0 0 10svmin; }
+.grid3d-face-back { translate: 0 0 -10svmin; transform: rotateY(180deg); }
+.grid3d-face-right { translate: 10svmin 0 0; transform: rotateY(-90deg); }
+.grid3d-face-left { translate: -10svmin 0 0; transform: rotateY(90deg); }
+.grid3d-face-top { translate: 0 10svmin 0; transform: rotateX(90deg); }
+.grid3d-face-bottom { translate: 0 -10svmin 0; transform: rotateX(-90deg); }
 
-.grid3d-face-back {
-  translate: 0 0 -10svmin;
-  rotate: y 180deg;
-}
-
-.grid3d-face-right {
-  translate: 10svmin 0 0;
-  rotate: y -90deg;
-}
-
-.grid3d-face-left {
-  translate: -10svmin 0 0;
-  rotate: y 90deg;
-}
-
-.grid3d-face-top {
-  translate: 0 10svmin 0;
-  rotate: x 90deg;
-}
-
-.grid3d-face-bottom {
-  translate: 0 -10svmin 0;
-  rotate: x -90deg;
+@supports not (translate: 0 0 1px) {
+  .grid3d-face-front { transform: translateZ(10svmin); }
+  .grid3d-face-back { translate: none; transform: translateZ(-10svmin) rotateY(180deg); }
+  .grid3d-face-right { translate: none; transform: translateX(10svmin) rotateY(-90deg); }
+  .grid3d-face-left { translate: none; transform: translateX(-10svmin) rotateY(90deg); }
+  .grid3d-face-top { translate: none; transform: translateY(10svmin) rotateX(90deg); }
+  .grid3d-face-bottom { translate: none; transform: translateY(-10svmin) rotateX(-90deg); }
 }
 
 .grid3d-shape {
@@ -111,19 +144,30 @@
   filter: drop-shadow(0 0 8px #ffffff);
 }
 
-.grid3d-gate {
-  position: absolute;
-  width: 20.1svmin;
-  height: 20.1svmin;
-  left: 20.1svmin;
-  top: 20.1svmin;
-  transform-style: preserve-3d;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.grid3d-gate > * {
-  transform: translateZ(11svmin);
-}
+.p0-0-0 { transform: translate3d(-20.1svmin, -20.1svmin, -20.1svmin); }
+.p0-0-1 { transform: translate3d(-20.1svmin, -20.1svmin, 0); }
+.p0-0-2 { transform: translate3d(-20.1svmin, -20.1svmin, 20.1svmin); }
+.p0-1-0 { transform: translate3d(-20.1svmin, 0, -20.1svmin); }
+.p0-1-1 { transform: translate3d(-20.1svmin, 0, 0); }
+.p0-1-2 { transform: translate3d(-20.1svmin, 0, 20.1svmin); }
+.p0-2-0 { transform: translate3d(-20.1svmin, 20.1svmin, -20.1svmin); }
+.p0-2-1 { transform: translate3d(-20.1svmin, 20.1svmin, 0); }
+.p0-2-2 { transform: translate3d(-20.1svmin, 20.1svmin, 20.1svmin); }
+.p1-0-0 { transform: translate3d(0, -20.1svmin, -20.1svmin); }
+.p1-0-1 { transform: translate3d(0, -20.1svmin, 0); }
+.p1-0-2 { transform: translate3d(0, -20.1svmin, 20.1svmin); }
+.p1-1-0 { transform: translate3d(0, 0, -20.1svmin); }
+.p1-1-1 { transform: translate3d(0, 0, 0); }
+.p1-1-2 { transform: translate3d(0, 0, 20.1svmin); }
+.p1-2-0 { transform: translate3d(0, 20.1svmin, -20.1svmin); }
+.p1-2-1 { transform: translate3d(0, 20.1svmin, 0); }
+.p1-2-2 { transform: translate3d(0, 20.1svmin, 20.1svmin); }
+.p2-0-0 { transform: translate3d(20.1svmin, -20.1svmin, -20.1svmin); }
+.p2-0-1 { transform: translate3d(20.1svmin, -20.1svmin, 0); }
+.p2-0-2 { transform: translate3d(20.1svmin, -20.1svmin, 20.1svmin); }
+.p2-1-0 { transform: translate3d(20.1svmin, 0, -20.1svmin); }
+.p2-1-1 { transform: translate3d(20.1svmin, 0, 0); }
+.p2-1-2 { transform: translate3d(20.1svmin, 0, 20.1svmin); }
+.p2-2-0 { transform: translate3d(20.1svmin, 20.1svmin, -20.1svmin); }
+.p2-2-1 { transform: translate3d(20.1svmin, 20.1svmin, 0); }
+.p2-2-2 { transform: translate3d(20.1svmin, 20.1svmin, 20.1svmin); }
