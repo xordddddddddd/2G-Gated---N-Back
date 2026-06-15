@@ -1,5 +1,7 @@
 import { GAME_MODE_LABELS } from '../lib/constants'
 import { getTutorialProgress } from '../lib/tutorial'
+import { createIdleGate, createIdleStimulus } from '../lib/sequence'
+import { Grid3DOverlay } from './Grid3DOverlay'
 import { QuadBoardFromTrial } from './QuadBoard'
 import type { useGame } from '../hooks/useGame'
 import type { useTutorial } from '../hooks/useTutorial'
@@ -80,8 +82,20 @@ export function TutorialLayout({ game, tutorial, onExit, onStartTraining }: Tuto
         <div className="h-full bg-white/40 transition-all" style={{ width: `${progress}%` }} />
       </div>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-6 gap-6 relative">
-        <QuadBoardFromTrial
+      <main className="flex-1 flex flex-col items-center justify-center p-6 gap-6 relative overflow-hidden">
+        {settings.gridMode === '3d' && (
+          <Grid3DOverlay
+            stimulus={demoTrial?.stimulus ?? createIdleStimulus()}
+            inputGate={demoTrial?.inputGate ?? createIdleGate()}
+            idle={!demoTrial}
+            rotationSpeed={settings.rotationSpeed}
+            gameMode={settings.gameMode}
+            gridMode={settings.gridMode}
+          />
+        )}
+
+        <div className="relative z-10 w-full flex justify-center">
+          <QuadBoardFromTrial
           trial={demoTrial}
           settings={settings}
           pressedStreams={pressedStreams}
@@ -89,9 +103,10 @@ export function TutorialLayout({ game, tutorial, onExit, onStartTraining }: Tuto
           idle={!demoTrial}
           interactive={view === 'practice'}
           showGateOverlay={Boolean(demoTrial)}
-        />
+          />
+        </div>
 
-        <div className="w-full max-w-lg text-center space-y-3 px-4">
+        <div className="relative z-10 w-full max-w-lg text-center space-y-3 px-4">
           <h2 className="text-lg font-serif">{step.title}</h2>
           <p className="text-sm text-white/60 leading-relaxed">{step.body}</p>
           {step.hint && view !== 'feedback' && (

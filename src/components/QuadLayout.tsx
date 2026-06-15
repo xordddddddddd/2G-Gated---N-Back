@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { formatPlayTime } from '../lib/history'
+import { createIdleGate, createIdleStimulus } from '../lib/sequence'
+import { Grid3DOverlay } from './Grid3DOverlay'
 import { QuadBoardFromTrial } from './QuadBoard'
 import { SettingsSidebar } from './SettingsSidebar'
 import { StatsModal } from './StatsModal'
@@ -154,8 +156,27 @@ export function QuadLayout({
           </div>
         )}
 
-        <main className="flex-1 flex items-center justify-center p-6 relative min-h-0">
-          <QuadBoardFromTrial
+        <main className="flex-1 flex items-center justify-center p-6 relative min-h-0 overflow-hidden">
+          {settings.gridMode === '3d' && (
+            <Grid3DOverlay
+              stimulus={
+                showIdle ? createIdleStimulus() : (trial?.stimulus ?? createIdleStimulus())
+              }
+              inputGate={showIdle ? createIdleGate() : (trial?.inputGate ?? createIdleGate())}
+              idle={showIdle}
+              rotationSpeed={settings.rotationSpeed}
+              gameMode={settings.gameMode}
+              gridMode={settings.gridMode}
+              flash={
+                wrongStreams.has('position') ||
+                wrongStreams.has('color') ||
+                wrongStreams.has('shape')
+              }
+            />
+          )}
+
+          <div className="relative z-10 w-full flex justify-center">
+            <QuadBoardFromTrial
             trial={trial}
             settings={settings}
             pressedStreams={pressedStreams}
@@ -166,7 +187,8 @@ export function QuadLayout({
             isPlaying={isPlaying}
             onPlay={handlePlay}
             onStop={stopSession}
-          />
+            />
+          </div>
 
           {feedback && settings.feedbackMode === 'show' && (
             <p className={`absolute bottom-20 text-sm font-medium ${FEEDBACK_STYLES[feedback]}`}>

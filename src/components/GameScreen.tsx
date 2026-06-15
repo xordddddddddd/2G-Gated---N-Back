@@ -1,4 +1,5 @@
 import { OUTPUT_GATE_LABELS } from '../lib/constants'
+import { Grid3DOverlay } from './Grid3DOverlay'
 import { QuadBoard } from './QuadBoard'
 import type { GameSettings, Trial, TrialFeedback } from '../types/game'
 import type { Stream } from '../types/game'
@@ -61,17 +62,29 @@ export function GameScreen({
         <span className="hidden sm:inline"> — {output.description}</span>
       </div>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 gap-4">
-        <QuadBoard
-          stimulus={trial.stimulus}
-          inputGate={trial.inputGate}
-          settings={settings}
-          pressedStreams={pressedStreams}
-          onStreamPress={onStreamPress}
-        />
+      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 gap-4 relative overflow-hidden">
+        {settings.gridMode === '3d' && (
+          <Grid3DOverlay
+            stimulus={trial.stimulus}
+            inputGate={trial.inputGate}
+            rotationSpeed={settings.rotationSpeed}
+            gameMode={settings.gameMode}
+            gridMode={settings.gridMode}
+          />
+        )}
+
+        <div className="relative z-10 w-full flex justify-center">
+          <QuadBoard
+            stimulus={trial.stimulus}
+            inputGate={trial.inputGate}
+            settings={settings}
+            pressedStreams={pressedStreams}
+            onStreamPress={onStreamPress}
+          />
+        </div>
 
         {feedback && (
-          <p className={`text-sm font-medium ${FEEDBACK_STYLES[feedback]}`}>
+          <p className={`relative z-10 text-sm font-medium ${FEEDBACK_STYLES[feedback]}`}>
             {feedback === 'hit' && 'Correct!'}
             {feedback === 'miss' && 'Missed a match'}
             {feedback === 'false-alarm' && 'False alarm'}

@@ -9,6 +9,7 @@
   perspective: 60svmin;
   perspective-origin: 50% 50%;
   overflow: hidden;
+  transform-style: flat;
 }
 
 .grid3d-scene {
