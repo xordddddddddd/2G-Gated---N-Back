@@ -1,4 +1,4 @@
-import type { OutputGate, Stream } from '../types/game'
+import type { GameSettings, InputGate, OutputGate, Stream, StreamKeys } from '../types/game'
 
 export const LETTERS = ['C', 'H', 'K', 'L', 'Q', 'R', 'S', 'T'] as const
 
@@ -24,10 +24,12 @@ export const GRID_SIZE = 3
 
 export const STREAM_LABELS: Record<Stream, string> = {
   position: 'Position',
-  letter: 'Letter',
+  letter: 'Audio',
   color: 'Color',
   shape: 'Shape',
 }
+
+export const STREAM_DISPLAY_ORDER: Stream[] = ['color', 'position', 'shape', 'letter']
 
 export const OUTPUT_GATE_LABELS: Record<OutputGate, { label: string; symbol: string; description: string }> = {
   or: {
@@ -47,12 +49,36 @@ export const OUTPUT_GATE_LABELS: Record<OutputGate, { label: string; symbol: str
   },
 }
 
-export const DEFAULT_SETTINGS = {
+export const DEFAULT_STREAM_KEYS: StreamKeys = {
+  position: 'a',
+  color: 'f',
+  shape: 'j',
+  letter: 'l',
+}
+
+export const DEFAULT_ENABLED_STREAMS: InputGate = {
+  position: true,
+  letter: true,
+  color: true,
+  shape: true,
+}
+
+export const DEFAULT_SETTINGS: GameSettings = {
   nLevel: 2,
   trialCount: 30,
   intervalMs: 2500,
   soundEnabled: true,
   adaptive: true,
+  feedbackSounds: true,
+  keys: DEFAULT_STREAM_KEYS,
+  responseMode: 'per-stream',
+  outputGateMode: 'random',
+  enableInputGating: true,
+  enabledStreams: DEFAULT_ENABLED_STREAMS,
+  showTrialCounter: true,
+  showOutputGate: true,
+  showWarmupHint: true,
+  matchProbability: 0.3,
 }
 
 export const INPUT_GATE_PATTERNS: InputGatePattern[] = [
@@ -72,3 +98,9 @@ interface InputGatePattern {
   color: boolean
   shape: boolean
 }
+
+export const INTERVAL_OPTIONS = [1500, 2000, 2500, 3000, 3500, 4000, 5000]
+
+export const TRIAL_COUNT_OPTIONS = [10, 20, 30, 40, 50, 75, 100]
+
+export const N_LEVEL_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9]

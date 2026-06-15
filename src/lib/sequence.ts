@@ -1,6 +1,6 @@
 import { COLORS, INPUT_GATE_PATTERNS, LETTERS, SHAPES } from './constants'
-import { pickOutputGate } from './gating'
-import type { InputGate, OutputGate, Stimulus, Trial } from '../types/game'
+import { pickOutputGate } from './response'
+import type { GameSettings, InputGate, OutputGate, Stimulus, Trial } from '../types/game'
 
 function randomItem<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)]
@@ -20,8 +20,17 @@ function createStimulus(overrides: Partial<Stimulus> = {}): Stimulus {
   }
 }
 
-function pickInputGate(index: number): InputGate {
-  return INPUT_GATE_PATTERNS[index % INPUT_GATE_PATTERNS.length]
+function pickInputGate(index: number, settings: Pick<GameSettings, 'enableInputGating' | 'enabledStreams'>): InputGate {
+  if (!settings.enableInputGating) {
+    return { ...settings.enabledStreams }
+  }
+  const pattern = INPUT_GATE_PATTERNS[index % INPUT_GATE_PATTERNS.length]
+  return {
+    position: pattern.position && settings.enabledStreams.position,
+    letter: pattern.letter && settings.enabledStreams.letter,
+    color: pattern.color && settings.enabledStreams.color,
+    shape: pattern.shape && settings.enabledStreams.shape,
+  }
 }
 
 function copyStreamFrom(
@@ -138,23 +147,27 @@ function wouldTrialMatch(
   }
 }
 
-export function generateTrials(nLevel: number, count: number): Trial[] {
+export function generateTrials(
+  settings: Pick<GameSettings, 'nLevel' | 'trialCount' | 'matchProbability' | 'outputGateMode' | 'enableInputGating' | 'enabledStreams'>,
+): Trial[] {
+  const nLevel = settings.nLevel
+  const count = settings.nLevel + settings.trialCount
   const trials: Trial[] = []
   const warmup = Math.max(nLevel, 2)
 
   for (let i = 0; i < warmup; i++) {
     trials.push({
       stimulus: createStimulus(),
-      inputGate: pickInputGate(i),
-      outputGate: pickOutputGate(i),
+      inputGate: pickInputGate(i, settings),
+      outputGate: pickOutputGate(i, settings.outputGateMode),
     })
   }
 
   for (let i = warmup; i < count; i++) {
     const past = trials[i - nLevel].stimulus
-    const inputGate = pickInputGate(i)
-    const outputGate = pickOutputGate(i)
-    const shouldMatch = Math.random() < 0.3
+    const inputGate = pickInputGate(i, settings)
+    const outputGate = pickOutputGate(i, settings.outputGateMode)
+    const shouldMatch = Math.random() < settings.matchProbability
 
     const stimulus = shouldMatch
       ? generateMatchTrial(past, inputGate, outputGate)

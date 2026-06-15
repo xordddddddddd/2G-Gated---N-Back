@@ -61,7 +61,3 @@ export function shouldRespond(
   }
 }
 
-export function pickOutputGate(index: number): OutputGate {
-  const gates: OutputGate[] = ['or', 'and', 'xor']
-  return gates[index % gates.length]
-}
