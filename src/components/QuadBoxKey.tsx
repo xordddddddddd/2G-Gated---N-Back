@@ -1,3 +1,4 @@
+import { usePointerPress } from '../hooks/usePointerPress'
 import { STREAM_LABELS } from '../lib/constants'
 import type { Stream } from '../types/game'
 
@@ -21,22 +22,14 @@ export function QuadBoxKey({
   disabled = false,
 }: QuadBoxKeyProps) {
   const label = STREAM_LABELS[stream]
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    e.preventDefault()
-  }
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    onPress()
-  }
+  const isDisabled = !active || disabled
+  const pointerPress = usePointerPress(onPress, isDisabled)
 
   return (
     <button
       type="button"
-      onPointerDown={handlePointerDown}
-      onClick={handleClick}
-      disabled={!active || disabled}
+      {...pointerPress}
+      disabled={isDisabled}
       className={[
         'qb-key-btn',
         correct ? 'qb-correct' : '',
