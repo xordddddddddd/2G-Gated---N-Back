@@ -49,11 +49,25 @@ npm run preview
 
 This project is configured for Vercel with `vercel.json` (Vite build → `dist/`).
 
+**Important:** In the Vercel dashboard, use **Deployments → Create Deployment** from the latest `main` branch — do not use "Redeploy" on an old deployment (that re-serves the same commit).
+
+1. Import at [vercel.com/new/clone?repository-url=https://github.com/xordddddddddd/2G-Gated---N-Back](https://vercel.com/new/clone?repository-url=https://github.com/xordddddddddd/2G-Gated---N-Back)
+2. Framework preset: **Vite**
+3. Build command: `npm run build`
+4. Output directory: `dist`
+5. Enable **Auto Deploy** for the `main` branch
+
+After deploying, check the build hash on the menu screen (bottom of Home tab). It should match the latest git commit on `main`.
+
 ```bash
-npx vercel --prod
+npx vercel --prod --force
 ```
 
-Or connect the GitHub repo in the [Vercel dashboard](https://vercel.com/new/clone?repository-url=https://github.com/xordddddddddd/2G-Gated---N-Back) for automatic deployments on push.
+## GitHub Pages (auto-deploy)
+
+Every push to `main` also deploys to GitHub Pages:
+
+https://xordddddddddd.github.io/2G-Gated---N-Back/
 
 ## Tech Stack
 

@@ -65,6 +65,9 @@ export function MenuScreen({
                   {settings.intervalMs / 1000}s interval
                 </p>
                 <p>Customize everything in the Settings tab.</p>
+                <p className="text-[10px] text-muted/70 font-mono pt-1">
+                  v{typeof __BUILD_SHA__ !== 'undefined' ? __BUILD_SHA__ : 'dev'}
+                </p>
               </div>
 
               <div className="flex flex-col gap-3">
