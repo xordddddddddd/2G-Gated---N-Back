@@ -121,8 +121,8 @@ export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onTogg
   }
 
   return (
-    <aside className="w-[220px] shrink-0 border-r border-white/10 bg-black overflow-y-auto max-h-dvh">
-      <div className="flex items-center justify-between px-3 py-3 border-b border-white/10">
+    <aside className="w-[300px] shrink-0 border-r border-white/10 bg-black overflow-y-auto max-h-dvh">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
         <h2 className="text-sm font-medium text-white/90">Settings</h2>
         {onToggle && (
           <button type="button" onClick={onToggle} className="text-white/50 hover:text-white text-lg leading-none">
@@ -131,7 +131,7 @@ export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onTogg
         )}
       </div>
 
-      <div className="p-3 space-y-4 text-sm">
+      <div className="p-4 space-y-4 text-sm">
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"
