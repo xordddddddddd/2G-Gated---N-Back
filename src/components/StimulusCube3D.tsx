@@ -7,6 +7,7 @@ import {
   toDisplayPosition,
 } from '../lib/grid3d'
 import { FRAME_LAYER_CLASSES } from '../lib/grid3dLayers'
+import { GateLabel } from './GateOverlay'
 import { GridCell3D } from './GridCell3D'
 import { GridFrame } from './GridFrame'
 import type { GameMode, GridMode, InputGate, OutputGate, Stimulus } from '../types/game'
@@ -55,6 +56,8 @@ export function StimulusCube3D({
   idle = false,
   rotationSpeed = 35,
   gameMode = 'quad',
+  outputGate = 'or',
+  showGate = false,
   gridMode = '3d',
 }: StimulusCube3DProps) {
   const rotationStart = useMemo(() => getRotationStart(), [])
@@ -66,8 +69,13 @@ export function StimulusCube3D({
   const highlightPosition = showCell && inputGate.position
   const appearance = getCubeAppearance(stimulus, inputGate, gameMode, Boolean(highlightPosition))
 
-  return (
-    <div className="grid3d-viewport">
+  const viewport = (
+    <div className={showGate ? 'grid3d-viewport grid3d-viewport--gated' : 'grid3d-viewport'}>
+      {showGate && (
+        <div className="grid3d-gate-center" aria-hidden>
+          <GateLabel outputGate={outputGate} size="center" />
+        </div>
+      )}
       <div
         className="grid3d-scene"
         style={
@@ -91,6 +99,20 @@ export function StimulusCube3D({
         {FRAME_LAYER_CLASSES.map((layerClass) => (
           <GridFrame key={layerClass} layerClass={layerClass} />
         ))}
+      </div>
+    </div>
+  )
+
+  if (!showGate) return viewport
+
+  return (
+    <div className="grid3d-gate-layout">
+      <div className="grid3d-gate-side grid3d-gate-side-left" aria-hidden>
+        <GateLabel outputGate={outputGate} size="side" />
+      </div>
+      {viewport}
+      <div className="grid3d-gate-side grid3d-gate-side-right" aria-hidden>
+        <GateLabel outputGate={outputGate} size="side" />
       </div>
     </div>
   )

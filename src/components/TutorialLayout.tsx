@@ -91,6 +91,8 @@ export function TutorialLayout({ game, tutorial, onExit, onStartTraining }: Tuto
             rotationSpeed={settings.rotationSpeed}
             gameMode={settings.gameMode}
             gridMode={settings.gridMode}
+            outputGate={demoTrial?.outputGate ?? 'or'}
+            showGate={settings.gameMode === '2g' && Boolean(demoTrial)}
           />
         )}
 

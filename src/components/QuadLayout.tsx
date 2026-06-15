@@ -206,6 +206,8 @@ export function QuadLayout({
               rotationSpeed={settings.rotationSpeed}
               gameMode={settings.gameMode}
               gridMode={settings.gridMode}
+              outputGate={trial?.outputGate ?? 'or'}
+              showGate={settings.gameMode === '2g' && !showIdle}
             />
           )}
 

@@ -70,6 +70,8 @@ export function GameScreen({
             rotationSpeed={settings.rotationSpeed}
             gameMode={settings.gameMode}
             gridMode={settings.gridMode}
+            outputGate={trial.outputGate}
+            showGate={settings.gameMode === '2g'}
           />
         )}
 
