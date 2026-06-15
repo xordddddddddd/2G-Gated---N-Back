@@ -32,7 +32,7 @@ export function QuadLayout({
   todayPlayMs,
   isPlaying,
   pressedStreams,
-  startSession,
+  handlePlay,
   stopSession,
   dismissResults,
   updateSettings,
@@ -125,7 +125,7 @@ export function QuadLayout({
             idle={showIdle}
             interactive={isPlaying}
             isPlaying={isPlaying}
-            onPlay={startSession}
+            onPlay={handlePlay}
             onStop={stopSession}
           />
 
@@ -210,7 +210,7 @@ export function QuadLayout({
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={startSession}
+                onClick={handlePlay}
                 className="flex-1 py-3 rounded border border-white/30 font-serif hover:bg-white/10"
               >
                 Play Again

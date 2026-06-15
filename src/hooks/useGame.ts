@@ -50,6 +50,7 @@ export function useGame() {
   const [suggestedN, setSuggestedN] = useState(settings.nLevel)
   const [todayPlayMs, setTodayPlayMs] = useState(() => getTodayPlayTimeMs())
   const [, setConsecutiveWins] = useState(0)
+  const [, setConsecutiveLosses] = useState(0)
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const speakTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -254,6 +255,27 @@ export function useGame() {
                 }
                 return nextWins
               })
+              setConsecutiveLosses(0)
+            } else if (settings.autoProgression) {
+              setConsecutiveWins(0)
+              setConsecutiveLosses((l) => {
+                const nextLosses = l + 1
+                if (
+                  nextLosses >= settings.loseAfter &&
+                  streamAvg / 100 < settings.autoProgressionThreshold
+                ) {
+                  const nextN = Math.max(settings.nLevel - 1, 1)
+                  if (nextN < settings.nLevel) {
+                    setSettings((s) => {
+                      const updated = { ...s, nLevel: nextN }
+                      saveSettings(updated)
+                      return updated
+                    })
+                    return 0
+                  }
+                }
+                return nextLosses
+              })
             } else {
               setConsecutiveWins(0)
             }
@@ -306,6 +328,18 @@ export function useGame() {
     sessionStartRef.current = Date.now()
     setPhase('playing')
   }, [settings, clearTimers])
+
+  const handlePlay = useCallback(() => {
+    if (settings.tutorialMode) {
+      setPhase('tutorial')
+    } else {
+      void startSession()
+    }
+  }, [settings.tutorialMode, startSession])
+
+  const exitTutorial = useCallback(() => {
+    setPhase('ready')
+  }, [])
 
   const stopSession = useCallback(() => {
     cancelledRef.current = true
@@ -421,8 +455,10 @@ export function useGame() {
     todayPlayMs,
     isPlaying,
     pressedStreams,
+    handlePlay,
     startSession,
     stopSession,
+    exitTutorial,
     dismissResults,
     updateSettings,
     resetSettings: resetSettingsToDefaults,

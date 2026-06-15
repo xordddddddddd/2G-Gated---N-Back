@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react'
 import { COLORS, GRID_PX } from '../lib/constants'
 import { ShapeIcon } from './ShapeIcon'
-import type { InputGate, Stimulus } from '../types/game'
+import type { GameMode, InputGate, Stimulus } from '../types/game'
 
 interface StimulusCube3DProps {
   stimulus: Stimulus
   inputGate: InputGate
   idle?: boolean
   rotationSpeed?: number
+  gameMode?: GameMode
 }
 
 const CUBE_SIZE = GRID_PX * 0.78
@@ -18,11 +19,13 @@ function GridFace({
   inputGate,
   idle,
   transform,
+  gameMode,
 }: {
   stimulus: Stimulus
   inputGate: InputGate
   idle: boolean
   transform: string
+  gameMode: GameMode
 }) {
   const color = COLORS.find((c) => c.id === stimulus.color) ?? COLORS[0]
   const cellSize = CUBE_SIZE / 3
@@ -41,20 +44,25 @@ function GridFace({
     >
       {cells.map((i) => {
         const isActive = !idle && i === stimulus.position
+        const onWhite = isActive && inputGate.position
+        const shapeColor =
+          gameMode === 'quad'
+            ? onWhite
+              ? '#1a1a1a'
+              : '#ffffff'
+            : inputGate.color
+              ? color.hex
+              : '#ffffff'
         return (
           <div
             key={i}
             className="relative border border-white/90"
             style={{ width: cellSize, height: cellSize }}
           >
-            {isActive && inputGate.position && <div className="absolute inset-0 bg-white" />}
+            {onWhite && <div className="absolute inset-0 bg-white" />}
             {isActive && inputGate.shape && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <ShapeIcon
-                  shapeId={stimulus.shape}
-                  color={inputGate.color ? color.hex : '#111'}
-                  size={shapeSize}
-                />
+                <ShapeIcon shapeId={stimulus.shape} color={shapeColor} size={shapeSize} />
               </div>
             )}
             {isActive && inputGate.color && !inputGate.shape && (
@@ -81,6 +89,7 @@ export function StimulusCube3D({
   inputGate,
   idle = false,
   rotationSpeed = 35,
+  gameMode = 'quad',
 }: StimulusCube3DProps) {
   const cubeRef = useRef<HTMLDivElement>(null)
   const angleRef = useRef(28)
@@ -126,36 +135,42 @@ export function StimulusCube3D({
           stimulus={stimulus}
           inputGate={inputGate}
           idle={idle}
+          gameMode={gameMode}
           transform={`translateZ(${d}px)`}
         />
         <GridFace
           stimulus={stimulus}
           inputGate={inputGate}
           idle={idle}
+          gameMode={gameMode}
           transform={`rotateY(180deg) translateZ(${d}px)`}
         />
         <GridFace
           stimulus={stimulus}
           inputGate={inputGate}
           idle={idle}
+          gameMode={gameMode}
           transform={`rotateY(90deg) translateZ(${d}px)`}
         />
         <GridFace
           stimulus={stimulus}
           inputGate={inputGate}
           idle={idle}
+          gameMode={gameMode}
           transform={`rotateY(-90deg) translateZ(${d}px)`}
         />
         <GridFace
           stimulus={stimulus}
           inputGate={inputGate}
           idle={idle}
+          gameMode={gameMode}
           transform={`rotateX(90deg) translateZ(${d}px)`}
         />
         <GridFace
           stimulus={stimulus}
           inputGate={inputGate}
           idle={idle}
+          gameMode={gameMode}
           transform={`rotateX(-90deg) translateZ(${d}px)`}
         />
       </div>

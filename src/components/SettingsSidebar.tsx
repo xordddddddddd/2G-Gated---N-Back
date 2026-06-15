@@ -299,8 +299,36 @@ export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onTogg
             onChange={(e) => onUpdate({ winAfter: Number(e.target.value) })}
             className="w-full bg-[#1a1a1a] border border-white/20 rounded px-2 py-1.5 text-sm"
           />
-          <span className="text-[10px] text-white/40">sessions in a row</span>
+          <span className="text-[10px] text-white/40">good sessions to level up</span>
         </label>
+
+        {settings.autoProgression && (
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-white/70">Lose after</span>
+            <input
+              type="number"
+              min={1}
+              max={5}
+              value={settings.loseAfter}
+              onChange={(e) => onUpdate({ loseAfter: Number(e.target.value) })}
+              className="w-full bg-[#1a1a1a] border border-white/20 rounded px-2 py-1.5 text-sm"
+            />
+            <span className="text-[10px] text-white/40">bad sessions to level down</span>
+          </label>
+        )}
+
+        <label className="flex items-center justify-between gap-2">
+          <span className="text-xs text-white/70">Tutorial mode</span>
+          <input
+            type="checkbox"
+            checked={settings.tutorialMode}
+            onChange={(e) => onUpdate({ tutorialMode: e.target.checked })}
+            className="accent-pink-500"
+          />
+        </label>
+        <p className="text-[10px] text-white/40 -mt-2">
+          Play runs a tutorial for the current mode (2G, Dual, or Quad)
+        </p>
 
         <button
           type="button"
