@@ -34,6 +34,12 @@ export function randomPosition3D(): number {
 }
 
 /** Seeded rotation start angles (matches Quad Box: new offset every 2 hours). */
+export function positionKeyToTransform(key: string): string {
+  const [xs, ys, zs] = key.split('-').map(Number)
+  const u = 20.1
+  return `translate3d(${(xs - 1) * u}svmin, ${(ys - 1) * u}svmin, ${(zs - 1) * u}svmin)`
+}
+
 export function getRotationStart(): { x: number; y: number; z: number } {
   const seed = Math.floor(Date.now() / 7_200_000) * 7_200_000
   let s = seed

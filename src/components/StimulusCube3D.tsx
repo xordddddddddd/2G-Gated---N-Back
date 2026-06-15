@@ -3,6 +3,7 @@ import { COLORS } from '../lib/constants'
 import {
   getRotationStart,
   indexToPositionKey,
+  positionKeyToTransform,
   rotationDurationSec,
   toDisplayPosition,
 } from '../lib/grid3d'
@@ -50,6 +51,21 @@ function getCubeAppearance(
   return { faceColor: '#fdfdfd', shapeColor: '#1a1a1a' }
 }
 
+const FRAME_LAYERS: { transform: string }[] = [
+  { transform: 'translateZ(-30.15svmin)' },
+  { transform: 'translateZ(-10.05svmin)' },
+  { transform: 'translateZ(10.05svmin)' },
+  { transform: 'translateZ(30.15svmin)' },
+  { transform: 'translateY(-30.15svmin) rotateX(90deg)' },
+  { transform: 'translateY(-10.05svmin) rotateX(90deg)' },
+  { transform: 'translateY(10.05svmin) rotateX(90deg)' },
+  { transform: 'translateY(30.15svmin) rotateX(90deg)' },
+  { transform: 'translateX(-30.15svmin) rotateY(90deg)' },
+  { transform: 'translateX(-10.05svmin) rotateY(90deg)' },
+  { transform: 'translateX(10.05svmin) rotateY(90deg)' },
+  { transform: 'translateX(30.15svmin) rotateY(90deg)' },
+]
+
 export function StimulusCube3D({
   stimulus,
   inputGate,
@@ -71,49 +87,42 @@ export function StimulusCube3D({
   const appearance = getCubeAppearance(stimulus, inputGate, gameMode, Boolean(highlightPosition))
 
   return (
-    <div className="grid3d-viewport flex items-center justify-center w-full min-w-[60svmin] min-h-[60svmin]">
-      <div
-        className="grid3d-scene"
-        style={
-          {
-            animationDuration: `${durationSec}s`,
-            '--rotation-start-x': `${rotationStart.x}deg`,
-            '--rotation-start-y': `${rotationStart.y}deg`,
-            '--rotation-start-z': `${rotationStart.z}deg`,
-          } as React.CSSProperties
-        }
-      >
-        {showCell && (
-          <GridCell3D
-            positionKey={positionKey}
-            faceColor={appearance.faceColor}
-            flash={flash}
-            shapeId={appearance.shapeId}
-            shapeColor={appearance.shapeColor}
-            shapeSize={64}
-          />
-        )}
+    <div className="grid3d-viewport">
+      <div className="grid3d-scene-offset">
+        <div
+          className="grid3d-scene-rotate"
+          style={
+            {
+              animationDuration: `${durationSec}s`,
+              '--rotation-start-x': `${rotationStart.x}deg`,
+              '--rotation-start-y': `${rotationStart.y}deg`,
+              '--rotation-start-z': `${rotationStart.z}deg`,
+            } as React.CSSProperties
+          }
+        >
+          {showCell && (
+            <GridCell3D
+              positionKey={positionKey}
+              faceColor={appearance.faceColor}
+              flash={flash}
+              shapeId={appearance.shapeId}
+              shapeColor={appearance.shapeColor}
+            />
+          )}
 
-        {showGate && (
-          <div className="grid3d-gate">
-            <GateCellContent outputGate={outputGate} visible={showGate} />
-          </div>
-        )}
+          {showGate && (
+            <div
+              className="grid3d-gate"
+              style={{ transform: positionKeyToTransform('1-1-1') }}
+            >
+              <GateCellContent outputGate={outputGate} visible={showGate} />
+            </div>
+          )}
 
-        <GridFrame className="grid3d-layer-z grid3d-layer-z-back-2" />
-        <GridFrame className="grid3d-layer-z grid3d-layer-z-back-1" />
-        <GridFrame className="grid3d-layer-z grid3d-layer-z-front-1" />
-        <GridFrame className="grid3d-layer-z grid3d-layer-z-front-2" />
-
-        <GridFrame className="grid3d-layer-y grid3d-layer-y-back-2" />
-        <GridFrame className="grid3d-layer-y grid3d-layer-y-back-1" />
-        <GridFrame className="grid3d-layer-y grid3d-layer-y-front-1" />
-        <GridFrame className="grid3d-layer-y grid3d-layer-y-front-2" />
-
-        <GridFrame className="grid3d-layer-x grid3d-layer-x-back-2" />
-        <GridFrame className="grid3d-layer-x grid3d-layer-x-back-1" />
-        <GridFrame className="grid3d-layer-x grid3d-layer-x-front-1" />
-        <GridFrame className="grid3d-layer-x grid3d-layer-x-front-2" />
+          {FRAME_LAYERS.map((layer, i) => (
+            <GridFrame key={i} transform={layer.transform} />
+          ))}
+        </div>
       </div>
     </div>
   )
