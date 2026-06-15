@@ -171,16 +171,6 @@ export function QuadLayout({
               rotationSpeed={settings.rotationSpeed}
               gameMode={settings.gameMode}
               gridMode={settings.gridMode}
-              flash={
-                wrongStreams.has('position') ||
-                wrongStreams.has('color') ||
-                wrongStreams.has('shape')
-              }
-              correctFlash={
-                correctStreams.has('position') ||
-                correctStreams.has('color') ||
-                correctStreams.has('shape')
-              }
             />
           )}
 

@@ -4,8 +4,6 @@ import type { CSSProperties } from 'react'
 interface GridCell3DProps {
   positionKey: string
   faceColor: string
-  flash?: boolean
-  correctFlash?: boolean
   shapeId?: string
   shapeColor?: string
 }
@@ -22,8 +20,6 @@ const FACE_CLASSES = [
 export function GridCell3D({
   positionKey,
   faceColor,
-  flash = false,
-  correctFlash = false,
   shapeId,
   shapeColor = '#1a1a1a',
 }: GridCell3DProps) {
@@ -33,9 +29,7 @@ export function GridCell3D({
   }
 
   return (
-    <div
-      className={`grid3d-cell p${positionKey}${flash ? ' grid3d-flash-wrong' : ''}${correctFlash ? ' grid3d-flash-correct' : ''}`}
-    >
+    <div className={`grid3d-cell p${positionKey}`}>
       {FACE_CLASSES.map((faceClass) => (
         <div key={faceClass} className={`grid3d-face ${faceClass}`} style={faceStyle} />
       ))}
