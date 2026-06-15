@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { playFeedback, resumeAudio, speakLetter, stopSpeech } from '../lib/audio'
+import { playFeedback, resumeAudio, setVoicePreference, speakLetter, stopSpeech } from '../lib/audio'
 import { getGameLabel } from '../lib/constants'
 import { shouldRespond, getActiveStreams } from '../lib/gating'
 import { addPlayTime, getTodayPlayTimeMs, saveSession } from '../lib/history'
@@ -35,7 +35,11 @@ function buildStreamCorrect(
 
 export function useGame() {
   const [phase, setPhase] = useState<GamePhase>('ready')
-  const [settings, setSettings] = useState<GameSettings>(() => loadSettings())
+  const [settings, setSettings] = useState<GameSettings>(() => {
+    const loaded = loadSettings()
+    setVoicePreference(loaded.voiceUri)
+    return loaded
+  })
   const [trials, setTrials] = useState<ReturnType<typeof generateTrials>>([])
   const [trialIndex, setTrialIndex] = useState(0)
   const [results, setResults] = useState<TrialResult[]>([])
@@ -332,6 +336,7 @@ export function useGame() {
           : prev.enabledStreams,
       }
       saveSettings(next)
+      setVoicePreference(next.voiceUri)
       return next
     })
   }, [])

@@ -20,50 +20,79 @@ const LETTER_SPOKEN: Record<string, string> = {
   T: 'T',
 }
 
+const MALE_VOICE_PRIORITY = [
+  'Daniel',
+  'Google UK English Male',
+  'Microsoft David',
+  'Microsoft Guy',
+  'Google US English Male',
+  'Alex',
+  'Fred',
+  'Tom',
+  'Mark',
+  'James',
+  'Aaron',
+  'Arthur',
+  'Rishi',
+]
+
 let audioContext: AudioContext | null = null
-let preferredVoice: SpeechSynthesisVoice | null = null
+let activeVoice: SpeechSynthesisVoice | null = null
 let voicesLoaded = false
+let voicePreference = ''
 
 function getContext(): AudioContext {
   if (!audioContext) audioContext = new AudioContext()
   return audioContext
 }
 
-function pickVoice(): SpeechSynthesisVoice | null {
-  if (!('speechSynthesis' in window)) return null
-  const voices = window.speechSynthesis.getVoices()
-  const priority = [
-    'Google US English',
-    'Samantha',
-    'Microsoft Zira',
-    'Microsoft Aria',
-    'Karen',
-    'Daniel',
-    'Alex',
-    'Fred',
-  ]
-  for (const name of priority) {
-    const match = voices.find((v) => v.name.includes(name) && v.lang.startsWith('en'))
+export function getEnglishVoices(): SpeechSynthesisVoice[] {
+  if (!('speechSynthesis' in window)) return []
+  return window.speechSynthesis.getVoices().filter((v) => v.lang.startsWith('en'))
+}
+
+function pickDefaultMaleVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  for (const name of MALE_VOICE_PRIORITY) {
+    const match = voices.find((v) => v.name.includes(name))
     if (match) return match
   }
-  return (
-    voices.find((v) => v.lang.startsWith('en') && v.localService !== false) ??
-    voices.find((v) => v.lang.startsWith('en')) ??
-    null
+  const maleHint = voices.find(
+    (v) =>
+      /male|david|daniel|guy|alex|fred|james|tom|mark/i.test(v.name) &&
+      !/female|zira|samantha|aria|karen|susan|victoria/i.test(v.name),
   )
+  if (maleHint) return maleHint
+  return voices[0] ?? null
+}
+
+function resolveVoice(): SpeechSynthesisVoice | null {
+  const voices = getEnglishVoices()
+  if (voices.length === 0) return null
+  if (voicePreference) {
+    const preferred =
+      voices.find((v) => v.voiceURI === voicePreference) ??
+      voices.find((v) => v.name === voicePreference)
+    if (preferred) return preferred
+  }
+  return pickDefaultMaleVoice(voices)
 }
 
 function ensureVoices(): void {
-  if (voicesLoaded || !('speechSynthesis' in window)) return
-  preferredVoice = pickVoice()
+  if (!('speechSynthesis' in window)) return
+  activeVoice = resolveVoice()
   if (window.speechSynthesis.getVoices().length > 0) {
     voicesLoaded = true
   } else {
     window.speechSynthesis.onvoiceschanged = () => {
-      preferredVoice = pickVoice()
+      activeVoice = resolveVoice()
       voicesLoaded = true
     }
   }
+}
+
+export function setVoicePreference(uri: string): void {
+  voicePreference = uri
+  activeVoice = resolveVoice()
 }
 
 export async function resumeAudio(): Promise<void> {
@@ -110,10 +139,10 @@ export function speakLetter(letter: string, enabled = true): void {
     ensureVoices()
     window.speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(spoken)
-    u.rate = 0.82
-    u.pitch = 1.05
+    u.rate = 0.78
+    u.pitch = 0.95
     u.volume = 1
-    if (preferredVoice) u.voice = preferredVoice
+    if (activeVoice) u.voice = activeVoice
     u.onerror = () => playLetterTone(letter)
     window.speechSynthesis.speak(u)
     return

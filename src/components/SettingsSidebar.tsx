@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { GAME_MODE_LABELS } from '../lib/constants'
+import { getEnglishVoices, resumeAudio } from '../lib/audio'
 import type { GameMode, GameSettings } from '../types/game'
 
 interface SettingsSidebarProps {
@@ -80,10 +82,29 @@ const GAME_MODES: GameMode[] = ['quad', 'dual', '2g']
 
 export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onToggle }: SettingsSidebarProps) {
   const modeIndex = GAME_MODES.indexOf(settings.gameMode)
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+
+  useEffect(() => {
+    const load = async () => {
+      await resumeAudio()
+      setVoices(getEnglishVoices())
+    }
+    load()
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => setVoices(getEnglishVoices())
+    }
+  }, [])
 
   const cycleMode = (dir: -1 | 1) => {
     const next = GAME_MODES[(modeIndex + dir + GAME_MODES.length) % GAME_MODES.length]
-    onUpdate({ gameMode: next })
+    onUpdate({
+      gameMode: next,
+      ...(next === '2g'
+        ? { enableInputGating: true, responseMode: 'gated' as const }
+        : next === 'quad'
+          ? { responseMode: 'per-stream' as const }
+          : {}),
+    })
   }
 
   if (collapsed) {
@@ -186,9 +207,22 @@ export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onTogg
         <SelectRow
           label="Grid"
           value={settings.gridMode}
-          options={['2d']}
-          labels={{ '2d': '2D' }}
+          options={['2d', '3d']}
+          labels={{ '2d': '2D', '3d': '3D Cube' }}
           onChange={(gridMode) => onUpdate({ gridMode })}
+        />
+
+        <SelectRow
+          label="Voice"
+          value={settings.voiceUri || '__default__'}
+          options={['__default__', ...voices.map((v) => v.voiceURI)]}
+          labels={{
+            __default__: 'Default (Male)',
+            ...Object.fromEntries(voices.map((v) => [v.voiceURI, v.name])),
+          }}
+          onChange={(voiceUri) =>
+            onUpdate({ voiceUri: voiceUri === '__default__' ? '' : voiceUri })
+          }
         />
 
         <SelectRow
