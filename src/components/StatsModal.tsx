@@ -7,6 +7,7 @@ import {
   loadSessions,
   scoreColor,
 } from '../lib/history'
+import type { Stream } from '../types/game'
 
 interface StatsModalProps {
   open: boolean
@@ -166,28 +167,33 @@ export function StatsModal({ open, onClose }: StatsModalProps) {
                     </td>
                   </tr>
                 )}
-                {filtered.map((s) => (
+                {filtered.map((s) => {
+                  const used = s.usedStreams ?? (['position', 'letter', 'color', 'shape'] as Stream[])
+                  const streamCell = (stream: Stream) => {
+                    if (!used.includes(stream)) {
+                      return <td className="py-2 pr-3 text-white/25">—</td>
+                    }
+                    return (
+                      <td className="py-2 pr-3" style={{ color: scoreColor(s.streamScores[stream]) }}>
+                        {s.streamScores[stream]}%
+                      </td>
+                    )
+                  }
+                  return (
                   <tr key={s.id} className="border-b border-white/5">
                     <td className="py-2 pr-3 text-white/70">{formatRelativeDate(s.date)}</td>
                     <td className="py-2 pr-3">{s.gameLabel}</td>
                     <td className="py-2 pr-3 font-medium" style={{ color: scoreColor(s.totalScore) }}>
                       {s.totalScore}%
                     </td>
-                    <td className="py-2 pr-3" style={{ color: scoreColor(s.streamScores.position) }}>
-                      {s.streamScores.position}%
-                    </td>
-                    <td className="py-2 pr-3" style={{ color: scoreColor(s.streamScores.letter) }}>
-                      {s.streamScores.letter}%
-                    </td>
-                    <td className="py-2 pr-3" style={{ color: scoreColor(s.streamScores.color) }}>
-                      {s.streamScores.color}%
-                    </td>
-                    <td className="py-2 pr-3" style={{ color: scoreColor(s.streamScores.shape) }}>
-                      {s.streamScores.shape}%
-                    </td>
+                    {streamCell('position')}
+                    {streamCell('letter')}
+                    {streamCell('color')}
+                    {streamCell('shape')}
                     <td className="py-2 text-white/70">{formatPlayTime(s.durationMs)}</td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           )}

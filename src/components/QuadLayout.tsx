@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { STREAM_LABELS } from '../lib/constants'
 import { formatPlayTime } from '../lib/history'
+import { averageStreamScores } from '../lib/stats'
 import { getKeyForStream } from '../lib/response'
 import { createIdleGate, createIdleStimulus } from '../lib/sequence'
 import { format2GKeyMapping, getDisplayKeyForStream } from '../lib/twoG'
@@ -331,36 +333,22 @@ export function QuadLayout({
               <div className="p-3 rounded bg-white/5">
                 <p className="text-white/50 text-xs">Total</p>
                 <p className="text-2xl font-bold">
-                  {Math.round(
-                    (stats.streamScores.position +
-                      stats.streamScores.letter +
-                      stats.streamScores.color +
-                      stats.streamScores.shape) /
-                      4,
-                  )}
-                  %
+                  {averageStreamScores(stats.streamScores, stats.usedStreams)}%
                 </p>
               </div>
               <div className="p-3 rounded bg-white/5">
                 <p className="text-white/50 text-xs">Accuracy</p>
                 <p className="text-2xl font-bold">{Math.round(stats.accuracy * 100)}%</p>
               </div>
-              <div className="p-3 rounded bg-white/5">
-                <p className="text-white/50 text-xs">Position</p>
-                <p>{stats.streamScores.position}%</p>
-              </div>
-              <div className="p-3 rounded bg-white/5">
-                <p className="text-white/50 text-xs">Audio</p>
-                <p>{stats.streamScores.letter}%</p>
-              </div>
-              <div className="p-3 rounded bg-white/5">
-                <p className="text-white/50 text-xs">Color</p>
-                <p>{stats.streamScores.color}%</p>
-              </div>
-              <div className="p-3 rounded bg-white/5">
-                <p className="text-white/50 text-xs">Shape</p>
-                <p>{stats.streamScores.shape}%</p>
-              </div>
+              {(['position', 'letter', 'color', 'shape'] as Stream[]).map((stream) => {
+                const used = stats.usedStreams.includes(stream)
+                return (
+                  <div key={stream} className="p-3 rounded bg-white/5">
+                    <p className="text-white/50 text-xs">{STREAM_LABELS[stream]}</p>
+                    <p>{used ? `${stats.streamScores[stream]}%` : '—'}</p>
+                  </div>
+                )
+              })}
             </div>
             {settings.adaptive && suggestedN !== nLevel && (
               <p className="text-sm text-center text-teal-400">

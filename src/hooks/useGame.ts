@@ -19,7 +19,7 @@ import {
   streamFromKey,
 } from '../lib/response'
 import { streamFromKeyFor2G } from '../lib/twoG'
-import { computeStats, suggestNLevel } from '../lib/stats'
+import { computeStats, suggestNLevel, averageStreamScores } from '../lib/stats'
 import { cancelTrialClock, startTrialClock } from '../lib/trialClockWorker'
 import type {
   GamePhase,
@@ -174,20 +174,16 @@ export function useGame() {
     (sessionResults: TrialResult[], durationMs: number, cancelled: boolean) => {
       if (sessionResults.length === 0) return
       const sessionStats = computeStats(sessionResults)
-      const streamAvg =
-        (sessionStats.streamScores.position +
-          sessionStats.streamScores.letter +
-          sessionStats.streamScores.color +
-          sessionStats.streamScores.shape) /
-        4
+      const streamAvg = averageStreamScores(sessionStats.streamScores, sessionStats.usedStreams)
 
       const session: GameSession = {
         id: crypto.randomUUID(),
         date: new Date().toISOString(),
         gameLabel: getGameLabel(settings),
         nLevel: settings.nLevel,
-        totalScore: Math.round(streamAvg),
+        totalScore: streamAvg,
         streamScores: sessionStats.streamScores,
+        usedStreams: sessionStats.usedStreams,
         durationMs,
         cancelled,
       }
@@ -341,12 +337,10 @@ export function useGame() {
             const sessionStats = computeStats(prev)
             setStats(sessionStats)
 
-            const streamAvg =
-              (sessionStats.streamScores.position +
-                sessionStats.streamScores.letter +
-                sessionStats.streamScores.color +
-                sessionStats.streamScores.shape) /
-              4
+            const streamAvg = averageStreamScores(
+              sessionStats.streamScores,
+              sessionStats.usedStreams,
+            )
 
             if (streamAvg / 100 >= settings.autoProgressionThreshold) {
               setConsecutiveWins((w) => {
@@ -512,14 +506,7 @@ export function useGame() {
     setPhase('ready')
     setStats(null)
     setTrials([])
-    if (settings.adaptive && suggestedN !== settings.nLevel) {
-      setSettings((prev) => {
-        const next = { ...prev, nLevel: suggestedN }
-        saveSettings(next)
-        return next
-      })
-    }
-  }, [settings.adaptive, settings.nLevel, suggestedN])
+  }, [])
 
   const updateSettings = useCallback((partial: Partial<GameSettings>) => {
     setSettings((prev) => {

@@ -5,6 +5,25 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
 
+export function getUsedStreamsFromResults(results: TrialResult[]): Stream[] {
+  const used = new Set<Stream>()
+  for (const result of results) {
+    for (const stream of result.activeStreams) {
+      used.add(stream)
+    }
+  }
+  return ['position', 'letter', 'color', 'shape'].filter((s) => used.has(s as Stream)) as Stream[]
+}
+
+export function averageStreamScores(
+  scores: StreamScores,
+  usedStreams: Stream[],
+): number {
+  if (usedStreams.length === 0) return 0
+  const total = usedStreams.reduce((sum, stream) => sum + scores[stream], 0)
+  return Math.round(total / usedStreams.length)
+}
+
 function computeStreamScores(results: TrialResult[]): StreamScores {
   const totals: Record<Stream, number> = { position: 0, letter: 0, color: 0, shape: 0 }
   const correct: Record<Stream, number> = { position: 0, letter: 0, color: 0, shape: 0 }
@@ -37,10 +56,10 @@ export function computeStats(results: TrialResult[]): SessionStats {
   const zHit = inverseNormalCDF(clamp(hitRate, 0.01, 0.99))
   const zFa = inverseNormalCDF(clamp(faRate, 0.01, 0.99))
   const streamScores = computeStreamScores(results)
-  const streamValues = Object.values(streamScores).filter((v) => v > 0)
+  const usedStreams = getUsedStreamsFromResults(results)
   const avgStream =
-    streamValues.length > 0
-      ? streamValues.reduce((a, b) => a + b, 0) / streamValues.length
+    usedStreams.length > 0
+      ? averageStreamScores(streamScores, usedStreams)
       : total > 0
         ? Math.round(((hits + correctRejects) / total) * 100)
         : 0
@@ -55,6 +74,7 @@ export function computeStats(results: TrialResult[]): SessionStats {
     streamScores: streamScores.position + streamScores.letter + streamScores.color + streamScores.shape > 0
       ? streamScores
       : { ...emptyStreamScores(), position: avgStream },
+    usedStreams,
   }
 }
 
@@ -111,12 +131,8 @@ function inverseNormalCDF(p: number): number {
 }
 
 export function suggestNLevel(stats: SessionStats, current: number): number {
-  const avg =
-    (stats.streamScores.position +
-      stats.streamScores.letter +
-      stats.streamScores.color +
-      stats.streamScores.shape) /
-    4
+  const used = stats.usedStreams.length > 0 ? stats.usedStreams : (['position', 'letter', 'color', 'shape'] as Stream[])
+  const avg = averageStreamScores(stats.streamScores, used)
   if (avg >= 80 && stats.dPrime >= 1.5) {
     return Math.min(current + 1, 9)
   }

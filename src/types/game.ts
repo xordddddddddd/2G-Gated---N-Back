@@ -114,6 +114,8 @@ export interface SessionStats {
   accuracy: number
   dPrime: number
   streamScores: StreamScores
+  /** Streams that had scorable trials this session (e.g. only 2 in 2G blocks). */
+  usedStreams: Stream[]
 }
 
 export interface GameSession {
@@ -123,6 +125,7 @@ export interface GameSession {
   nLevel: number
   totalScore: number
   streamScores: StreamScores
+  usedStreams?: Stream[]
   durationMs: number
   cancelled: boolean
 }
