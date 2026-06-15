@@ -12,6 +12,7 @@ interface QuadBoardProps {
   settings: GameSettings
   pressedStreams: Set<Stream>
   wrongStreams?: Set<Stream>
+  correctStreams?: Set<Stream>
   onStreamPress: (stream: Stream) => void
   idle?: boolean
   interactive?: boolean
@@ -28,6 +29,7 @@ export function QuadBoard({
   settings,
   pressedStreams,
   wrongStreams = new Set(),
+  correctStreams = new Set(),
   onStreamPress,
   idle = false,
   interactive = true,
@@ -64,6 +66,7 @@ export function QuadBoard({
           keyLabel={getKeyForStream('color', keys)}
           active={gate.color}
           pressed={pressedStreams.has('color')}
+          correct={correctStreams.has('color')}
           wrong={wrongStreams.has('color')}
           onPress={() => onStreamPress('color')}
           layout="left"
@@ -74,6 +77,7 @@ export function QuadBoard({
           keyLabel={getKeyForStream('position', keys)}
           active={gate.position}
           pressed={pressedStreams.has('position')}
+          correct={correctStreams.has('position')}
           wrong={wrongStreams.has('position')}
           onPress={() => onStreamPress('position')}
           layout="left"
@@ -113,6 +117,7 @@ export function QuadBoard({
             keyLabel={getKeyForStream('shape', keys)}
             active={gate.shape}
             pressed={pressedStreams.has('shape')}
+            correct={correctStreams.has('shape')}
             wrong={wrongStreams.has('shape')}
             onPress={() => onStreamPress('shape')}
             layout="right"
@@ -123,6 +128,7 @@ export function QuadBoard({
             keyLabel={getKeyForStream('letter', keys)}
             active={gate.letter}
             pressed={pressedStreams.has('letter')}
+            correct={correctStreams.has('letter')}
             wrong={wrongStreams.has('letter')}
             onPress={() => onStreamPress('letter')}
             layout="right"
@@ -139,6 +145,7 @@ export function QuadBoardFromTrial({
   settings,
   pressedStreams,
   wrongStreams = new Set(),
+  correctStreams = new Set(),
   onStreamPress,
   idle,
   interactive,
@@ -151,6 +158,7 @@ export function QuadBoardFromTrial({
   settings: GameSettings
   pressedStreams: Set<Stream>
   wrongStreams?: Set<Stream>
+  correctStreams?: Set<Stream>
   onStreamPress: (stream: Stream) => void
   idle?: boolean
   interactive?: boolean
@@ -171,6 +179,7 @@ export function QuadBoardFromTrial({
       settings={settings}
       pressedStreams={pressedStreams}
       wrongStreams={wrongStreams}
+      correctStreams={correctStreams}
       onStreamPress={onStreamPress}
       idle={idle ?? !trial}
       interactive={interactive}
