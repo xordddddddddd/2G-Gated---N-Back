@@ -44,6 +44,17 @@ function getWrongStreams(
   return wrong
 }
 
+function getCorrectStreams(
+  streamCorrect: Partial<Record<Stream, boolean>>,
+  activeStreams: Stream[],
+): Set<Stream> {
+  const correct = new Set<Stream>()
+  for (const stream of activeStreams) {
+    if (streamCorrect[stream] === true) correct.add(stream)
+  }
+  return correct
+}
+
 export function useGame() {
   const [phase, setPhase] = useState<GamePhase>('ready')
   const [settings, setSettings] = useState<GameSettings>(() => {
@@ -58,16 +69,26 @@ export function useGame() {
   const [respondedThisTrial, setRespondedThisTrial] = useState(false)
   const [pressedStreams, setPressedStreams] = useState<Set<Stream>>(new Set())
   const [wrongStreams, setWrongStreams] = useState<Set<Stream>>(new Set())
+  const [correctStreams, setCorrectStreams] = useState<Set<Stream>>(new Set())
   const [stats, setStats] = useState<SessionStats | null>(null)
   const [suggestedN, setSuggestedN] = useState(settings.nLevel)
   const [todayPlayMs, setTodayPlayMs] = useState(() => getTodayPlayTimeMs())
   const [, setConsecutiveWins] = useState(0)
   const [, setConsecutiveLosses] = useState(0)
 
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const trialTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const trialClockIdRef = useRef(0)
   const speakTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sessionStartRef = useRef<number | null>(null)
   const cancelledRef = useRef(false)
+  const pressedStreamsRef = useRef(pressedStreams)
+  const respondedThisTrialRef = useRef(respondedThisTrial)
+  const finishTrialRef = useRef<() => void>(() => {})
+  const advanceTrialRef = useRef<() => void>(() => {})
+
+  pressedStreamsRef.current = pressedStreams
+  respondedThisTrialRef.current = respondedThisTrial
 
   const currentTrial = trials[trialIndex] ?? null
   const nLevel = settings.nLevel
@@ -78,9 +99,14 @@ export function useGame() {
   const isPlaying = phase === 'playing'
 
   const clearTimers = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
+    trialClockIdRef.current += 1
+    if (trialTimeoutRef.current) {
+      clearTimeout(trialTimeoutRef.current)
+      trialTimeoutRef.current = null
+    }
+    if (advanceTimeoutRef.current) {
+      clearTimeout(advanceTimeoutRef.current)
+      advanceTimeoutRef.current = null
     }
     if (speakTimeoutRef.current) {
       clearTimeout(speakTimeoutRef.current)
@@ -127,8 +153,9 @@ export function useGame() {
   )
 
   const finishTrial = useCallback(() => {
-    if (!currentTrial || respondedThisTrial || !isScorable) return
+    if (!currentTrial || respondedThisTrialRef.current || !isScorable) return
 
+    const pressed = pressedStreamsRef.current
     const past = trials[trialIndex - nLevel]
     let trialFeedback: TrialFeedback
     let correct: boolean
@@ -143,7 +170,7 @@ export function useGame() {
         currentTrial.inputGate,
         currentTrial.outputGate,
       )
-      const responded = pressedStreams.size > 0
+      const responded = pressed.size > 0
       if (shouldMatch && responded) {
         trialFeedback = 'hit'
         correct = true
@@ -162,7 +189,7 @@ export function useGame() {
         past.stimulus,
         currentTrial.inputGate,
       )
-      streamCorrect = buildStreamCorrect(pressedStreams, streamMatchesMap, currentTrial.inputGate)
+      streamCorrect = buildStreamCorrect(pressed, streamMatchesMap, currentTrial.inputGate)
     } else {
       const streamMatchesMap = getStreamMatchesForTrial(
         currentTrial.stimulus,
@@ -170,21 +197,18 @@ export function useGame() {
         currentTrial.inputGate,
       )
       const result = evaluatePerStreamResponse(
-        pressedStreams,
+        pressed,
         streamMatchesMap,
         currentTrial.inputGate,
       )
       trialFeedback = result.feedback
       correct = result.correct
       shouldMatch = Object.values(streamMatchesMap).some(Boolean)
-      streamCorrect = buildStreamCorrect(pressedStreams, streamMatchesMap, currentTrial.inputGate)
+      streamCorrect = buildStreamCorrect(pressed, streamMatchesMap, currentTrial.inputGate)
     }
 
-    if (!correct) {
-      setWrongStreams(getWrongStreams(streamCorrect, activeStreams))
-    } else {
-      setWrongStreams(new Set())
-    }
+    setCorrectStreams(getCorrectStreams(streamCorrect, activeStreams))
+    setWrongStreams(getWrongStreams(streamCorrect, activeStreams))
 
     if (settings.feedbackMode === 'hide') {
       setFeedback(null)
@@ -193,38 +217,34 @@ export function useGame() {
     }
 
     setRespondedThisTrial(true)
+    respondedThisTrialRef.current = true
 
     const trialResult: TrialResult = {
       trialIndex,
-      responded: pressedStreams.size > 0,
+      responded: pressed.size > 0,
       correct,
       shouldMatch,
       feedback: trialFeedback,
       outputGate: currentTrial.outputGate,
       activeStreams,
-      pressedStreams: [...pressedStreams],
+      pressedStreams: [...pressed],
       streamCorrect,
     }
 
     setResults((prev) => [...prev, trialResult])
-  }, [
-    currentTrial,
-    respondedThisTrial,
-    isScorable,
-    trials,
-    trialIndex,
-    nLevel,
-    pressedStreams,
-    settings,
-  ])
+  }, [currentTrial, isScorable, trials, trialIndex, nLevel, settings])
 
   const handleStreamPress = useCallback(
     (stream: Stream) => {
-      if (!currentTrial || respondedThisTrial || !isScorable || phase !== 'playing') return
+      if (!currentTrial || respondedThisTrialRef.current || !isScorable || phase !== 'playing') return
       if (!currentTrial.inputGate[stream]) return
-      setPressedStreams((prev) => new Set(prev).add(stream))
+      setPressedStreams((prev) => {
+        const next = new Set(prev).add(stream)
+        pressedStreamsRef.current = next
+        return next
+      })
     },
-    [currentTrial, respondedThisTrial, isScorable, phase],
+    [currentTrial, isScorable, phase],
   )
 
   const endSession = useCallback(
@@ -303,7 +323,10 @@ export function useGame() {
       setPhase(cancelled ? 'ready' : 'results')
       setTrialIndex(0)
       setFeedback(null)
+      pressedStreamsRef.current = new Set()
       setPressedStreams(new Set())
+      setWrongStreams(new Set())
+      setCorrectStreams(new Set())
       if (cancelled) {
         setTrials([])
         setStats(null)
@@ -315,8 +338,11 @@ export function useGame() {
   const advanceTrial = useCallback(() => {
     setFeedback(null)
     setRespondedThisTrial(false)
+    respondedThisTrialRef.current = false
+    pressedStreamsRef.current = new Set()
     setPressedStreams(new Set())
     setWrongStreams(new Set())
+    setCorrectStreams(new Set())
 
     if (trialIndex + 1 >= trials.length) {
       endSession(false)
@@ -325,6 +351,9 @@ export function useGame() {
 
     setTrialIndex((i) => i + 1)
   }, [trialIndex, trials.length, endSession])
+
+  finishTrialRef.current = finishTrial
+  advanceTrialRef.current = advanceTrial
 
   const startSession = useCallback(async () => {
     await resumeAudio()
@@ -336,8 +365,11 @@ export function useGame() {
     setResults([])
     setFeedback(null)
     setRespondedThisTrial(false)
+    respondedThisTrialRef.current = false
+    pressedStreamsRef.current = new Set()
     setPressedStreams(new Set())
     setWrongStreams(new Set())
+    setCorrectStreams(new Set())
     setStats(null)
     sessionStartRef.current = Date.now()
     setPhase('playing')
@@ -395,37 +427,52 @@ export function useGame() {
   }, [])
 
   useEffect(() => {
-    if (phase !== 'playing' || !currentTrial) return
+    if (phase !== 'playing') return
 
-    if (currentTrial.inputGate.letter && settings.soundEnabled) {
-      speakLetter(currentTrial.stimulus.letter, true)
+    const trial = trials[trialIndex]
+    if (!trial) return
+
+    const clockId = ++trialClockIdRef.current
+    const scorable = trialIndex >= settings.nLevel
+
+    if (trial.inputGate.letter && settings.soundEnabled) {
+      speakLetter(trial.stimulus.letter, true)
       speakTimeoutRef.current = setTimeout(() => {}, 900)
     }
 
-    intervalRef.current = setInterval(() => {
-      if (!respondedThisTrial && isScorable) {
-        finishTrial()
+    trialTimeoutRef.current = setTimeout(() => {
+      if (trialClockIdRef.current !== clockId) return
+      if (!respondedThisTrialRef.current && scorable) {
+        finishTrialRef.current()
       }
-      setTimeout(advanceTrial, 200)
+      advanceTimeoutRef.current = setTimeout(() => {
+        if (trialClockIdRef.current === clockId) {
+          advanceTrialRef.current()
+        }
+      }, 200)
     }, settings.intervalMs)
 
-    return clearTimers
-  }, [
-    phase,
-    trialIndex,
-    currentTrial,
-    settings.soundEnabled,
-    settings.intervalMs,
-    respondedThisTrial,
-    isScorable,
-    finishTrial,
-    advanceTrial,
-    clearTimers,
-  ])
+    return () => {
+      trialClockIdRef.current += 1
+      if (trialTimeoutRef.current) {
+        clearTimeout(trialTimeoutRef.current)
+        trialTimeoutRef.current = null
+      }
+      if (advanceTimeoutRef.current) {
+        clearTimeout(advanceTimeoutRef.current)
+        advanceTimeoutRef.current = null
+      }
+      if (speakTimeoutRef.current) {
+        clearTimeout(speakTimeoutRef.current)
+        speakTimeoutRef.current = null
+      }
+      stopSpeech()
+    }
+  }, [phase, trialIndex, trials, settings.intervalMs, settings.soundEnabled, settings.nLevel])
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (phase !== 'playing' || respondedThisTrial || !isScorable) return
+      if (phase !== 'playing' || respondedThisTrialRef.current || !isScorable) return
 
       const stream = streamFromKey(e.key, settings.keys)
       if (stream) {
@@ -436,14 +483,15 @@ export function useGame() {
 
       if (settings.responseMode === 'gated' && e.code === 'Space') {
         e.preventDefault()
-        setPressedStreams(new Set(getActiveStreams(currentTrial!.inputGate)))
+        const active = new Set(getActiveStreams(currentTrial!.inputGate))
+        pressedStreamsRef.current = active
+        setPressedStreams(active)
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [
     phase,
-    respondedThisTrial,
     isScorable,
     settings.keys,
     settings.responseMode,
@@ -471,6 +519,7 @@ export function useGame() {
     isPlaying,
     pressedStreams,
     wrongStreams,
+    correctStreams,
     handlePlay,
     startSession,
     stopSession,

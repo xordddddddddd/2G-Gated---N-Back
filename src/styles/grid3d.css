@@ -100,8 +100,12 @@
   height: 82%;
 }
 
-.grid3d-flash .grid3d-face {
+.grid3d-flash-wrong .grid3d-face {
   filter: drop-shadow(0 0 8px #ffffff);
+}
+
+.grid3d-flash-correct .grid3d-face {
+  filter: drop-shadow(0 0 10px #4ade80);
 }
 
 .p0-0-0 { transform: translate3d(-20.1svmin, -20.1svmin, -20.1svmin); }
