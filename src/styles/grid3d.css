@@ -1,0 +1,239 @@
+/* 3D grid — ported from Quad Box (soamsy/quad-box) */
+
+.grid3d-viewport {
+  perspective: 60svmin;
+  overflow: hidden;
+}
+
+.grid3d-scene {
+  position: relative;
+  width: 60.3svmin;
+  height: 60.3svmin;
+  transform-style: preserve-3d;
+  transform: translateZ(-10svmin);
+  animation: grid3d-spin linear infinite;
+  will-change: transform;
+}
+
+@keyframes grid3d-spin {
+  from {
+    transform: translateZ(-10svmin)
+      rotateX(var(--rotation-start-x, 0deg))
+      rotateY(var(--rotation-start-y, 0deg))
+      rotateZ(var(--rotation-start-z, 0deg));
+  }
+  to {
+    transform: translateZ(-10svmin)
+      rotateX(calc(var(--rotation-start-x, 0deg) + 360deg))
+      rotateY(calc(var(--rotation-start-y, 0deg) + 360deg))
+      rotateZ(calc(var(--rotation-start-z, 0deg) + 360deg));
+  }
+}
+
+.grid3d-frame {
+  backface-visibility: hidden;
+}
+
+/* Z layers */
+.grid3d-layer-z-back-2 {
+  transform: translateZ(-30.15svmin);
+}
+.grid3d-layer-z-back-1 {
+  transform: translateZ(-10.05svmin);
+}
+.grid3d-layer-z-front-1 {
+  transform: translateZ(10.05svmin);
+}
+.grid3d-layer-z-front-2 {
+  transform: translateZ(30.15svmin);
+}
+
+/* Y layers (horizontal slices) */
+.grid3d-layer-y {
+  transform: rotateX(90deg);
+}
+.grid3d-layer-y-back-2 {
+  transform: translateY(-30.15svmin) rotateX(90deg);
+}
+.grid3d-layer-y-back-1 {
+  transform: translateY(-10.05svmin) rotateX(90deg);
+}
+.grid3d-layer-y-front-1 {
+  transform: translateY(10.05svmin) rotateX(90deg);
+}
+.grid3d-layer-y-front-2 {
+  transform: translateY(30.15svmin) rotateX(90deg);
+}
+
+/* X layers (vertical slices) */
+.grid3d-layer-x {
+  transform: rotateY(90deg);
+}
+.grid3d-layer-x-back-2 {
+  transform: translateX(-30.15svmin) rotateY(90deg);
+}
+.grid3d-layer-x-back-1 {
+  transform: translateX(-10.05svmin) rotateY(90deg);
+}
+.grid3d-layer-x-front-1 {
+  transform: translateX(10.05svmin) rotateY(90deg);
+}
+.grid3d-layer-x-front-2 {
+  transform: translateX(30.15svmin) rotateY(90deg);
+}
+
+/* Stimulus cube */
+.grid3d-cell {
+  position: absolute;
+  width: 20.1svmin;
+  height: 20.1svmin;
+  left: 20.1svmin;
+  top: 20.1svmin;
+  transform-style: preserve-3d;
+}
+
+.grid3d-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+}
+
+.grid3d-face-front {
+  transform: translateZ(10svmin);
+}
+
+.grid3d-face-back {
+  transform: rotateY(180deg) translateZ(10svmin);
+}
+
+.grid3d-face-right {
+  transform: rotateY(90deg) translateZ(10svmin);
+}
+
+.grid3d-face-left {
+  transform: rotateY(-90deg) translateZ(10svmin);
+}
+
+.grid3d-face-top {
+  transform: rotateX(90deg) translateZ(10svmin);
+}
+
+.grid3d-face-bottom {
+  transform: rotateX(-90deg) translateZ(10svmin);
+}
+
+.grid3d-shape {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.grid3d-shape svg {
+  width: 82%;
+  height: 82%;
+}
+
+.grid3d-flash .grid3d-face {
+  filter: drop-shadow(0 0 8px #ffffff);
+}
+
+.grid3d-gate {
+  position: absolute;
+  left: 20.1svmin;
+  top: 20.1svmin;
+  width: 20.1svmin;
+  height: 20.1svmin;
+  transform: translate3d(0, 0, 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Cell positions (x-y-z) */
+.p0-0-0 {
+  transform: translate3d(-20.1svmin, -20.1svmin, -20.1svmin);
+}
+.p0-0-1 {
+  transform: translate3d(-20.1svmin, -20.1svmin, 0);
+}
+.p0-0-2 {
+  transform: translate3d(-20.1svmin, -20.1svmin, 20.1svmin);
+}
+.p0-1-0 {
+  transform: translate3d(-20.1svmin, 0, -20.1svmin);
+}
+.p0-1-1 {
+  transform: translate3d(-20.1svmin, 0, 0);
+}
+.p0-1-2 {
+  transform: translate3d(-20.1svmin, 0, 20.1svmin);
+}
+.p0-2-0 {
+  transform: translate3d(-20.1svmin, 20.1svmin, -20.1svmin);
+}
+.p0-2-1 {
+  transform: translate3d(-20.1svmin, 20.1svmin, 0);
+}
+.p0-2-2 {
+  transform: translate3d(-20.1svmin, 20.1svmin, 20.1svmin);
+}
+.p1-0-0 {
+  transform: translate3d(0, -20.1svmin, -20.1svmin);
+}
+.p1-0-1 {
+  transform: translate3d(0, -20.1svmin, 0);
+}
+.p1-0-2 {
+  transform: translate3d(0, -20.1svmin, 20.1svmin);
+}
+.p1-1-0 {
+  transform: translate3d(0, 0, -20.1svmin);
+}
+.p1-1-1 {
+  transform: translate3d(0, 0, 0);
+}
+.p1-1-2 {
+  transform: translate3d(0, 0, 20.1svmin);
+}
+.p1-2-0 {
+  transform: translate3d(0, 20.1svmin, -20.1svmin);
+}
+.p1-2-1 {
+  transform: translate3d(0, 20.1svmin, 0);
+}
+.p1-2-2 {
+  transform: translate3d(0, 20.1svmin, 20.1svmin);
+}
+.p2-0-0 {
+  transform: translate3d(20.1svmin, -20.1svmin, -20.1svmin);
+}
+.p2-0-1 {
+  transform: translate3d(20.1svmin, -20.1svmin, 0);
+}
+.p2-0-2 {
+  transform: translate3d(20.1svmin, -20.1svmin, 20.1svmin);
+}
+.p2-1-0 {
+  transform: translate3d(20.1svmin, 0, -20.1svmin);
+}
+.p2-1-1 {
+  transform: translate3d(20.1svmin, 0, 0);
+}
+.p2-1-2 {
+  transform: translate3d(20.1svmin, 0, 20.1svmin);
+}
+.p2-2-0 {
+  transform: translate3d(20.1svmin, 20.1svmin, -20.1svmin);
+}
+.p2-2-1 {
+  transform: translate3d(20.1svmin, 20.1svmin, 0);
+}
+.p2-2-2 {
+  transform: translate3d(20.1svmin, 20.1svmin, 20.1svmin);
+}
