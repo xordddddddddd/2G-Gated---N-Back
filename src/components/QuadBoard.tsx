@@ -1,7 +1,6 @@
 import { GRID_PX } from '../lib/constants'
 import { getKeyForStream } from '../lib/response'
 import { createIdleGate, createIdleStimulus } from '../lib/sequence'
-import { StimulusCube3D } from './StimulusCube3D'
 import { StimulusGrid } from './StimulusGrid'
 import { StreamKeyPanel } from './StreamKeyPanel'
 import type { GameSettings, InputGate, Stimulus, Stream, Trial } from '../types/game'
@@ -46,19 +45,7 @@ export function QuadBoard({
   const boardHeight = settings.gridMode === '3d' ? '60.3svmin' : GRID_PX
 
   const stimulusDisplay =
-    settings.gridMode === '3d' ? (
-      <StimulusCube3D
-        stimulus={displayStimulus}
-        inputGate={gate}
-        idle={idle}
-        rotationSpeed={settings.rotationSpeed}
-        gameMode={settings.gameMode}
-        outputGate={outputGate}
-        showGate={showGates}
-        gridMode={settings.gridMode}
-        flash={wrongStreams.has('position') || wrongStreams.has('color') || wrongStreams.has('shape')}
-      />
-    ) : (
+    settings.gridMode === '3d' ? null : (
       <StimulusGrid
         stimulus={displayStimulus}
         inputGate={gate}
@@ -70,7 +57,7 @@ export function QuadBoard({
     )
 
   return (
-    <div className="flex items-center justify-center gap-10">
+    <div className="relative z-10 flex items-center justify-center gap-10 w-full">
       <div className="flex flex-col justify-between shrink-0" style={{ height: boardHeight }}>
         <StreamKeyPanel
           stream="color"
@@ -95,7 +82,7 @@ export function QuadBoard({
       </div>
 
       <div className="relative shrink-0 w-[60.3svmin] h-[60.3svmin] flex items-center justify-center">
-        {stimulusDisplay}
+        {settings.gridMode === '3d' ? null : stimulusDisplay}
       </div>
 
       <div
