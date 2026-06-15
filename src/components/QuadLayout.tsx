@@ -31,6 +31,7 @@ export function QuadLayout({
   todayPlayMs,
   isPlaying,
   pressedStreams,
+  wrongStreams,
   handlePlay,
   stopSession,
   dismissResults,
@@ -158,6 +159,7 @@ export function QuadLayout({
             trial={trial}
             settings={settings}
             pressedStreams={pressedStreams}
+            wrongStreams={wrongStreams}
             onStreamPress={handleStreamPress}
             idle={showIdle}
             interactive={isPlaying}

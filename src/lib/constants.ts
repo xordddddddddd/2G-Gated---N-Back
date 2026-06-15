@@ -97,7 +97,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   tutorialMode: false,
   soundEnabled: true,
   adaptive: true,
-  feedbackSounds: true,
+  feedbackSounds: false,
   keys: DEFAULT_STREAM_KEYS,
   responseMode: 'per-stream',
   outputGateMode: 'random',
