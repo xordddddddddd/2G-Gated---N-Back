@@ -1,4 +1,5 @@
-import { ShapeIcon } from './ShapeIcon'
+import { getShapeBackgroundStyle } from '../lib/grid3dShape'
+import type { CSSProperties } from 'react'
 
 interface GridCell3DProps {
   positionKey: string
@@ -9,6 +10,15 @@ interface GridCell3DProps {
   shapeColor?: string
 }
 
+const FACE_CLASSES = [
+  'grid3d-face-front',
+  'grid3d-face-back',
+  'grid3d-face-right',
+  'grid3d-face-left',
+  'grid3d-face-top',
+  'grid3d-face-bottom',
+] as const
+
 export function GridCell3D({
   positionKey,
   faceColor,
@@ -17,25 +27,18 @@ export function GridCell3D({
   shapeId,
   shapeColor = '#1a1a1a',
 }: GridCell3DProps) {
-  const showShape = Boolean(shapeId)
-  const faceStyle = { backgroundColor: faceColor }
+  const faceStyle: CSSProperties = {
+    backgroundColor: faceColor,
+    ...getShapeBackgroundStyle(shapeId, shapeColor),
+  }
 
   return (
     <div
       className={`grid3d-cell p${positionKey}${flash ? ' grid3d-flash-wrong' : ''}${correctFlash ? ' grid3d-flash-correct' : ''}`}
     >
-      <div className="grid3d-face grid3d-face-front" style={faceStyle}>
-        {showShape && (
-          <div className="grid3d-shape">
-            <ShapeIcon shapeId={shapeId!} color={shapeColor} size={64} />
-          </div>
-        )}
-      </div>
-      <div className="grid3d-face grid3d-face-back" style={faceStyle} />
-      <div className="grid3d-face grid3d-face-right" style={faceStyle} />
-      <div className="grid3d-face grid3d-face-left" style={faceStyle} />
-      <div className="grid3d-face grid3d-face-top" style={faceStyle} />
-      <div className="grid3d-face grid3d-face-bottom" style={faceStyle} />
+      {FACE_CLASSES.map((faceClass) => (
+        <div key={faceClass} className={`grid3d-face ${faceClass}`} style={faceStyle} />
+      ))}
     </div>
   )
 }

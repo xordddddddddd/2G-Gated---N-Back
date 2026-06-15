@@ -8,6 +8,7 @@
   justify-content: center;
   perspective: 60svmin;
   perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
   overflow: hidden;
   user-select: none;
 }
@@ -19,21 +20,19 @@
   width: 60.3svmin;
   height: 60.3svmin;
   transform-style: preserve-3d;
-  transform: translateZ(-10svmin);
+  translate: 0 0 -10svmin;
   animation: grid3d-spin linear infinite;
   will-change: transform;
 }
 
 @keyframes grid3d-spin {
   from {
-    transform: translateZ(-10svmin)
-      rotateX(var(--rotation-start-x, 0deg))
+    transform: rotateX(var(--rotation-start-x, 0deg))
       rotateY(var(--rotation-start-y, 0deg))
       rotateZ(var(--rotation-start-z, 0deg));
   }
   to {
-    transform: translateZ(-10svmin)
-      rotateX(calc(var(--rotation-start-x, 0deg) + 360deg))
+    transform: rotateX(calc(var(--rotation-start-x, 0deg) + 360deg))
       rotateY(calc(var(--rotation-start-y, 0deg) + 360deg))
       rotateZ(calc(var(--rotation-start-z, 0deg) + 360deg));
   }
@@ -74,30 +73,33 @@
 
 .grid3d-face {
   position: absolute;
+  width: 100%;
+  height: 100%;
   inset: 0;
-  backface-visibility: hidden;
-  transform-style: flat;
 }
 
-.grid3d-face-front { transform: translateZ(10svmin); }
-.grid3d-face-back { transform: translateZ(-10svmin) rotateY(180deg); }
-.grid3d-face-right { transform: translateX(10svmin) rotateY(-90deg); }
-.grid3d-face-left { transform: translateX(-10svmin) rotateY(90deg); }
-.grid3d-face-top { transform: translateY(10svmin) rotateX(90deg); }
-.grid3d-face-bottom { transform: translateY(-10svmin) rotateX(-90deg); }
-
-.grid3d-shape {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
+.grid3d-face-front {
+  transform: translate3d(0, 0, 10svmin);
 }
 
-.grid3d-shape svg {
-  width: 82%;
-  height: 82%;
+.grid3d-face-back {
+  transform: translate3d(0, 0, -10svmin) rotateY(180deg);
+}
+
+.grid3d-face-right {
+  transform: translate3d(10svmin, 0, 0) rotateY(-90deg);
+}
+
+.grid3d-face-left {
+  transform: translate3d(-10svmin, 0, 0) rotateY(90deg);
+}
+
+.grid3d-face-top {
+  transform: translate3d(0, 10svmin, 0) rotateX(90deg);
+}
+
+.grid3d-face-bottom {
+  transform: translate3d(0, -10svmin, 0) rotateX(-90deg);
 }
 
 .grid3d-flash-wrong .grid3d-face {
