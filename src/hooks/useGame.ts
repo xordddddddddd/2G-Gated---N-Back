@@ -60,7 +60,9 @@ export function useGame() {
   const currentTrial = trials[trialIndex] ?? null
   const nLevel = settings.nLevel
   const isScorable = trialIndex >= nLevel
-  const trialsRemaining = Math.max(trials.length - trialIndex - 1, 0)
+  const playedTrials = settings.trialCount
+  const playedIndex = Math.max(trialIndex - nLevel, 0)
+  const trialsRemaining = Math.max(playedTrials - playedIndex - 1, 0)
   const isPlaying = phase === 'playing'
 
   const clearTimers = useCallback(() => {
@@ -319,7 +321,7 @@ export function useGame() {
     cancelledRef.current = false
     const generated = generateTrials(settings)
     setTrials(generated)
-    setTrialIndex(0)
+    setTrialIndex(nLevel)
     setResults([])
     setFeedback(null)
     setRespondedThisTrial(false)
@@ -444,7 +446,8 @@ export function useGame() {
     settings,
     currentTrial,
     trialIndex,
-    totalTrials: trials.length,
+    totalTrials: playedTrials,
+    playedIndex,
     trialsRemaining,
     nLevel,
     isScorable,

@@ -180,11 +180,9 @@ function wouldTrialMatch(
 
 export function generateTrials(settings: GameSettings): Trial[] {
   const nLevel = settings.nLevel
-  const count = settings.nLevel + settings.trialCount
   const trials: Trial[] = []
-  const warmup = Math.max(nLevel, 2)
 
-  for (let i = 0; i < warmup; i++) {
+  for (let i = 0; i < nLevel; i++) {
     trials.push({
       stimulus: createStimulus(settings),
       inputGate: pickInputGate(i, settings),
@@ -192,17 +190,18 @@ export function generateTrials(settings: GameSettings): Trial[] {
     })
   }
 
-  for (let i = warmup; i < count; i++) {
-    const past = trials[i - nLevel].stimulus
-    const inputGate = pickInputGate(i, settings)
-    const outputGate = pickOutputGate(i, settings.outputGateMode)
+  for (let i = 0; i < settings.trialCount; i++) {
+    const idx = nLevel + i
+    const past = trials[idx - nLevel].stimulus
+    const inputGate = pickInputGate(idx, settings)
+    const outputGate = pickOutputGate(idx, settings.outputGateMode)
     const shouldMatch = Math.random() < settings.matchProbability
 
     let stimulus = shouldMatch
       ? generateMatchTrial(past, inputGate, outputGate, settings)
       : generateNonMatchTrial(past, inputGate, outputGate, settings)
 
-    stimulus = applyInterference(stimulus, trials, i, nLevel, inputGate, settings.interference)
+    stimulus = applyInterference(stimulus, trials, idx, nLevel, inputGate, settings.interference)
 
     trials.push({ stimulus, inputGate, outputGate })
   }

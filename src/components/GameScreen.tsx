@@ -30,7 +30,6 @@ export function GameScreen({
   totalTrials,
   trialsRemaining,
   nLevel,
-  isScorable,
   feedback,
   settings,
   pressedStreams,
@@ -80,11 +79,6 @@ export function GameScreen({
           </p>
         )}
 
-        {!isScorable && (
-          <p className="text-xs text-white/40 text-center">
-            Warm-up {trialIndex + 1} / {nLevel}
-          </p>
-        )}
       </main>
 
       {settings.showTrialCounter && (
