@@ -55,6 +55,7 @@ export function QuadBoard({
         gameMode={settings.gameMode}
         outputGate={outputGate}
         showGate={showGates}
+        gridMode={settings.gridMode}
       />
     ) : (
       <StimulusGrid

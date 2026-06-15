@@ -212,6 +212,18 @@ export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onTogg
           onChange={(gridMode) => onUpdate({ gridMode })}
         />
 
+        {settings.gridMode === '3d' && (
+          <SliderRow
+            label="Rotation speed"
+            value={settings.rotationSpeed}
+            min={5}
+            max={80}
+            step={5}
+            format={(v) => String(v)}
+            onChange={(rotationSpeed) => onUpdate({ rotationSpeed })}
+          />
+        )}
+
         <SelectRow
           label="Voice"
           value={settings.voiceUri || '__default__'}
@@ -255,16 +267,6 @@ export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onTogg
           options={['show', 'hide']}
           labels={{ show: 'Show', hide: 'Hide' }}
           onChange={(feedbackMode) => onUpdate({ feedbackMode })}
-        />
-
-        <SliderRow
-          label="Rotation speed"
-          value={settings.rotationSpeed}
-          min={10}
-          max={80}
-          step={5}
-          format={(v) => String(v)}
-          onChange={(rotationSpeed) => onUpdate({ rotationSpeed })}
         />
 
         <label className="flex items-center justify-between gap-2">
