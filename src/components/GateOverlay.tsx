@@ -17,12 +17,18 @@ export function GateOverlay({ outputGate, visible }: GateOverlayProps) {
       aria-label={`Output gate ${output.label}`}
     >
       <span
-        className="font-serif leading-none select-none text-white/20"
-        style={{ fontSize: '7.5rem' }}
+        className="font-serif leading-none select-none text-white"
+        style={{
+          fontSize: '7.5rem',
+          textShadow: '0 0 12px rgba(0,0,0,0.95), 0 2px 4px rgba(0,0,0,0.9), 0 0 1px #000',
+        }}
       >
         {output.symbol}
       </span>
-      <span className="text-[10px] tracking-[0.35em] uppercase text-white/30 mt-1">
+      <span
+        className="text-xs tracking-[0.35em] uppercase text-white font-medium mt-1"
+        style={{ textShadow: '0 0 8px rgba(0,0,0,0.95), 0 1px 3px rgba(0,0,0,0.9)' }}
+      >
         {output.label}
       </span>
     </div>
