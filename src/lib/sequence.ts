@@ -1,6 +1,7 @@
 import { COLORS, TWO_G_BLOCK_SCORABLE_TRIALS, TWO_G_INPUT_PAIRS, get2GBlockIndex, get2GBlockLength, getLettersForMode, getShapesForMode } from './constants'
 import { randomPosition3D } from './grid3d'
 import { pickOutputGate } from './response'
+import { pickVariableIntervalMs } from './twoG'
 import type { GameSettings, InputGate, OutputGate, Stimulus, Trial } from '../types/game'
 
 function randomItem<T>(items: readonly T[]): T {
@@ -52,6 +53,25 @@ function pickInputGate(
     }
   }
   return { ...settings.enabledStreams }
+}
+
+function build2GTrialMeta(
+  trialIndex: number,
+  settings: Pick<GameSettings, 'nLevel' | 'intervalMs' | 'responseSwitching' | 'variableTiming'>,
+  blockKeySwaps: Map<number, boolean>,
+): Pick<Trial, 'intervalMs' | 'keysSwapped'> {
+  const blockIndex = get2GBlockIndex(trialIndex, settings.nLevel)
+  let keysSwapped = false
+  if (settings.responseSwitching) {
+    if (!blockKeySwaps.has(blockIndex)) {
+      blockKeySwaps.set(blockIndex, Math.random() < 0.5)
+    }
+    keysSwapped = blockKeySwaps.get(blockIndex)!
+  }
+  return {
+    intervalMs: settings.variableTiming ? pickVariableIntervalMs() : settings.intervalMs,
+    keysSwapped,
+  }
 }
 
 function copyStreamFrom(target: Stimulus, source: Stimulus, gate: InputGate): Stimulus {
@@ -194,13 +214,16 @@ export function generateTrials(settings: GameSettings): Trial[] {
     const numBlocks = Math.max(1, Math.ceil(settings.trialCount / TWO_G_BLOCK_SCORABLE_TRIALS))
     const totalTrials = numBlocks * blockLength
 
+    const blockKeySwaps = new Map<number, boolean>()
+
     for (let i = 0; i < totalTrials; i++) {
       const posInBlock = i % blockLength
       const inputGate = pickInputGate(i, settings)
       const outputGate = pickOutputGate(i, settings.outputGateMode, settings.gameMode, settings.nLevel)
+      const meta = build2GTrialMeta(i, settings, blockKeySwaps)
 
       if (posInBlock < nLevel) {
-        trials.push({ stimulus: createStimulus(settings), inputGate, outputGate })
+        trials.push({ stimulus: createStimulus(settings), inputGate, outputGate, ...meta })
         continue
       }
 
@@ -211,7 +234,7 @@ export function generateTrials(settings: GameSettings): Trial[] {
         : generateNonMatchTrial(past, inputGate, outputGate, settings)
 
       stimulus = applyInterference(stimulus, trials, i, nLevel, inputGate, settings.interference)
-      trials.push({ stimulus, inputGate, outputGate })
+      trials.push({ stimulus, inputGate, outputGate, ...meta })
     }
 
     return trials

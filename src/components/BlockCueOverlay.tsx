@@ -1,16 +1,29 @@
 import { OUTPUT_GATE_LABELS, get2GActivePairLabel } from '../lib/constants'
-import type { InputGate, OutputGate } from '../types/game'
+import { format2GKeyMapping } from '../lib/twoG'
+import type { GameSettings, InputGate, OutputGate } from '../types/game'
 
 interface BlockCueOverlayProps {
   inputGate: InputGate
   outputGate: OutputGate
   nLevel: number
   blockNumber: number
+  keys: GameSettings['keys']
+  keysSwapped: boolean
+  responseSwitching: boolean
 }
 
-export function BlockCueOverlay({ inputGate, outputGate, nLevel, blockNumber }: BlockCueOverlayProps) {
+export function BlockCueOverlay({
+  inputGate,
+  outputGate,
+  nLevel,
+  blockNumber,
+  keys,
+  keysSwapped,
+  responseSwitching,
+}: BlockCueOverlayProps) {
   const output = OUTPUT_GATE_LABELS[outputGate]
   const pairLabel = get2GActivePairLabel(inputGate)
+  const keyMapping = format2GKeyMapping(inputGate, keys, keysSwapped)
 
   return (
     <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/85 p-4">
@@ -30,6 +43,11 @@ export function BlockCueOverlay({ inputGate, outputGate, nLevel, blockNumber }: 
           <p>
             N-back level: <span className="text-white font-semibold">{nLevel}</span>
           </p>
+          {responseSwitching && keyMapping && (
+            <p>
+              Key mapping: <span className="text-white font-semibold">{keyMapping}</span>
+            </p>
+          )}
         </div>
         <p className="text-xs text-white/40">Press Space or wait to begin</p>
       </div>

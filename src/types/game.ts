@@ -40,6 +40,10 @@ export interface Trial {
   stimulus: Stimulus
   inputGate: InputGate
   outputGate: OutputGate
+  /** Per-trial interval when variable timing is enabled (2G). */
+  intervalMs?: number
+  /** Swapped key mapping for the active pair within this block (2G). */
+  keysSwapped?: boolean
 }
 
 export interface StreamKeys {
@@ -84,6 +88,10 @@ export interface GameSettings {
   enabledStreams: InputGate
   showTrialCounter: boolean
   voiceUri: string
+  /** Swap active-pair key labels each block (2G). */
+  responseSwitching: boolean
+  /** Randomize inter-trial interval 1500–3500ms each trial (2G). */
+  variableTiming: boolean
 }
 
 export interface TrialResult {

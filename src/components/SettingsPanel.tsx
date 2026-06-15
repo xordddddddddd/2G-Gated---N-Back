@@ -243,9 +243,25 @@ export function SettingsPanel({ settings, onUpdate, onReset }: SettingsPanelProp
                 value={settings.outputGateMode}
                 options={['random', 'or', 'and', 'xor']}
                 onChange={(outputGateMode) => onUpdate({ outputGateMode })}
-                format={(m) => (m === 'random' ? 'Random rotation' : m.toUpperCase())}
+                format={(m) => (m === 'random' ? 'Random per block (2G)' : m.toUpperCase())}
               />
             </Field>
+            {settings.gameMode === '2g' && (
+              <>
+                <Toggle
+                  label="Response switching"
+                  hint="Swap active-pair key labels randomly each block"
+                  checked={settings.responseSwitching}
+                  onChange={(responseSwitching) => onUpdate({ responseSwitching })}
+                />
+                <Toggle
+                  label="Variable timing"
+                  hint="Randomize each trial interval between 1500ms and 3500ms"
+                  checked={settings.variableTiming}
+                  onChange={(variableTiming) => onUpdate({ variableTiming })}
+                />
+              </>
+            )}
             {(['or', 'and', 'xor'] as const).map((gate) => (
               <div key={gate} className="p-3 rounded-xl bg-surface-overlay border border-border text-sm">
                 <span className="font-semibold text-warning">{OUTPUT_GATE_LABELS[gate].label}</span>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { formatPlayTime } from '../lib/history'
 import { getKeyForStream } from '../lib/response'
 import { createIdleGate, createIdleStimulus } from '../lib/sequence'
+import { format2GKeyMapping, getDisplayKeyForStream } from '../lib/twoG'
 import { BlockCueOverlay } from './BlockCueOverlay'
 import { GateBar } from './GateBar'
 import { Grid3DOverlay } from './Grid3DOverlay'
@@ -10,7 +11,7 @@ import { SettingsSidebar } from './SettingsSidebar'
 import { StimulusGrid } from './StimulusGrid'
 import { StatsModal } from './StatsModal'
 import type { useGame } from '../hooks/useGame'
-import type { TrialFeedback } from '../types/game'
+import type { Stream, TrialFeedback } from '../types/game'
 
 type GameApi = ReturnType<typeof useGame>
 
@@ -64,6 +65,15 @@ export function QuadLayout({
 
   const keys = settings.keys
   const interactive = isPlaying
+  const keysSwapped = trial?.keysSwapped ?? false
+  const streamKeyLabel = (stream: Stream) =>
+    settings.gameMode === '2g'
+      ? getDisplayKeyForStream(stream, keys, gate, keysSwapped)
+      : getKeyForStream(stream, keys)
+  const keyMapping =
+    settings.gameMode === '2g' && isPlaying
+      ? format2GKeyMapping(gate, keys, keysSwapped)
+      : ''
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -205,6 +215,9 @@ export function QuadLayout({
               outputGate={blockCue.outputGate}
               nLevel={nLevel}
               blockNumber={blockCue.blockNumber}
+              keys={keys}
+              keysSwapped={blockCue.keysSwapped}
+              responseSwitching={settings.responseSwitching}
             />
           )}
 
@@ -222,7 +235,7 @@ export function QuadLayout({
             <div className="qb-keys-left">
               <QuadBoxKey
                 stream="color"
-                keyLabel={getKeyForStream('color', keys)}
+                keyLabel={streamKeyLabel('color')}
                 active={gate.color}
                 correct={correctStreams.has('color')}
                 wrong={wrongStreams.has('color')}
@@ -231,7 +244,7 @@ export function QuadLayout({
               />
               <QuadBoxKey
                 stream="position"
-                keyLabel={getKeyForStream('position', keys)}
+                keyLabel={streamKeyLabel('position')}
                 active={gate.position}
                 correct={correctStreams.has('position')}
                 wrong={wrongStreams.has('position')}
@@ -243,7 +256,7 @@ export function QuadLayout({
             <div className="qb-keys-right">
               <QuadBoxKey
                 stream="shape"
-                keyLabel={getKeyForStream('shape', keys)}
+                keyLabel={streamKeyLabel('shape')}
                 active={gate.shape}
                 correct={correctStreams.has('shape')}
                 wrong={wrongStreams.has('shape')}
@@ -252,7 +265,7 @@ export function QuadLayout({
               />
               <QuadBoxKey
                 stream="letter"
-                keyLabel={getKeyForStream('letter', keys)}
+                keyLabel={streamKeyLabel('letter')}
                 active={gate.letter}
                 correct={correctStreams.has('letter')}
                 wrong={wrongStreams.has('letter')}
@@ -295,8 +308,16 @@ export function QuadLayout({
       </div>
 
       {isPlaying && (
-        <footer className="px-4 py-1 text-center text-[10px] text-white/20 shrink-0 z-20">
-          Trial {playedIndex + 1} / {totalTrials}
+        <footer className="px-4 py-1 text-center text-[10px] text-white/20 shrink-0 z-20 space-y-0.5">
+          <div>
+            Trial {playedIndex + 1} / {totalTrials}
+            {settings.gameMode === '2g' && settings.variableTiming && trial?.intervalMs && (
+              <span className="text-white/30"> · {trial.intervalMs}ms</span>
+            )}
+          </div>
+          {settings.gameMode === '2g' && settings.responseSwitching && keyMapping && (
+            <div className="text-white/35 tracking-wide">{keyMapping}</div>
+          )}
         </footer>
       )}
 

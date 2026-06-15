@@ -18,6 +18,7 @@ import {
   getStreamMatchesForTrial,
   streamFromKey,
 } from '../lib/response'
+import { streamFromKeyFor2G } from '../lib/twoG'
 import { computeStats, suggestNLevel } from '../lib/stats'
 import { cancelTrialClock, startTrialClock } from '../lib/trialClockWorker'
 import type {
@@ -110,6 +111,7 @@ export function useGame() {
     inputGate: InputGate
     outputGate: OutputGate
     blockNumber: number
+    keysSwapped: boolean
   } | null>(null)
   const [awaitingBlockCue, setAwaitingBlockCue] = useState(false)
   const [stats, setStats] = useState<SessionStats | null>(null)
@@ -441,6 +443,7 @@ export function useGame() {
         inputGate: nextTrial.inputGate,
         outputGate: nextTrial.outputGate,
         blockNumber: Math.floor(nextIndex / get2GBlockLength(settings.nLevel)) + 1,
+        keysSwapped: nextTrial.keysSwapped ?? false,
       })
       setAwaitingBlockCue(true)
       setTrialIndex(nextIndex)
@@ -477,6 +480,7 @@ export function useGame() {
         inputGate: generated[0].inputGate,
         outputGate: generated[0].outputGate,
         blockNumber: 1,
+        keysSwapped: generated[0].keysSwapped ?? false,
       })
       setAwaitingBlockCue(true)
     } else {
@@ -561,7 +565,11 @@ export function useGame() {
     if (!trial) return
 
     const clockId = ++trialClockIdRef.current
-    const scorable = trialIndex >= settings.nLevel
+    const scorable =
+      settings.gameMode === '2g'
+        ? is2GTrialScorable(trialIndex, settings.nLevel)
+        : trialIndex >= settings.nLevel
+    const trialMs = trial.intervalMs ?? settings.intervalMs
 
     if (trial.inputGate.letter && settings.soundEnabled) {
       speakLetter(trial.stimulus.letter, true)
@@ -571,7 +579,7 @@ export function useGame() {
     stopTrialClockRef.current?.()
     stopTrialClockRef.current = startTrialClock(
       clockId,
-      settings.intervalMs,
+      trialMs,
       200,
       (event) => {
         if (trialClockIdRef.current !== event.clockId) return
@@ -596,13 +604,30 @@ export function useGame() {
       }
       stopSpeech()
     }
-  }, [phase, trialIndex, settings.intervalMs, settings.soundEnabled, settings.nLevel, awaitingBlockCue])
+  }, [
+    phase,
+    trialIndex,
+    trials,
+    settings.intervalMs,
+    settings.gameMode,
+    settings.soundEnabled,
+    settings.nLevel,
+    awaitingBlockCue,
+  ])
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (phase !== 'playing' || respondedThisTrialRef.current || !isScorable || awaitingBlockCue) return
 
-      const stream = streamFromKey(e.key, settings.keys)
+      const stream =
+        settings.gameMode === '2g' && currentTrial
+          ? streamFromKeyFor2G(
+              e.key,
+              settings.keys,
+              currentTrial.inputGate,
+              currentTrial.keysSwapped ?? false,
+            )
+          : streamFromKey(e.key, settings.keys)
       if (stream) {
         e.preventDefault()
         handleStreamPress(stream)
@@ -622,6 +647,7 @@ export function useGame() {
     phase,
     isScorable,
     settings.keys,
+    settings.gameMode,
     settings.responseMode,
     handleStreamPress,
     currentTrial,

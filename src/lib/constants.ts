@@ -105,6 +105,8 @@ export const DEFAULT_SETTINGS: GameSettings = {
   enabledStreams: DEFAULT_ENABLED_STREAMS,
   showTrialCounter: true,
   voiceUri: '',
+  responseSwitching: false,
+  variableTiming: false,
 }
 
 export const INPUT_GATE_PATTERNS: InputGatePattern[] = [
@@ -182,6 +184,11 @@ export function getShapesForMode(mode: GameSettings['shapeMode']) {
 }
 
 export const INTERVAL_OPTIONS = [1500, 2000, 2500, 3000, 3500, 4000, 5000]
+
+export const TWO_G_INTERVAL_PRESETS = [3000, 2500, 2000] as const
+
+export const VARIABLE_INTERVAL_MIN_MS = 1500
+export const VARIABLE_INTERVAL_MAX_MS = 3500
 
 export const TRIAL_COUNT_OPTIONS = [10, 20, 29, 30, 40, 50, 75, 100]
 

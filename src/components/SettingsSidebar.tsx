@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { GAME_MODE_LABELS } from '../lib/constants'
+import { GAME_MODE_LABELS, TWO_G_INTERVAL_PRESETS } from '../lib/constants'
 import { getEnglishVoices, resumeAudio } from '../lib/audio'
 import type { GameMode, GameSettings } from '../types/game'
 
@@ -169,15 +169,54 @@ export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onTogg
           onChange={(nLevel) => onUpdate({ nLevel })}
         />
 
-        <SliderRow
-          label="Trial time"
-          value={settings.intervalMs}
-          min={1500}
-          max={5000}
-          step={100}
-          format={(v) => `${v}ms`}
-          onChange={(intervalMs) => onUpdate({ intervalMs })}
-        />
+        {settings.gameMode === '2g' ? (
+          <>
+            <SelectRow
+              label="Stimulus interval"
+              value={settings.variableTiming ? 'variable' : String(settings.intervalMs)}
+              options={[
+                ...TWO_G_INTERVAL_PRESETS.map((ms) => String(ms)),
+                'variable',
+              ]}
+              labels={{
+                '3000': '3000ms (default)',
+                '2500': '2500ms',
+                '2000': '2000ms (speed)',
+                variable: 'Variable (1500–3500ms)',
+              }}
+              onChange={(value) => {
+                if (value === 'variable') {
+                  onUpdate({ variableTiming: true })
+                } else {
+                  onUpdate({ variableTiming: false, intervalMs: Number(value) })
+                }
+              }}
+            />
+
+            <label className="flex items-center justify-between gap-2">
+              <span className="text-xs text-white/70">Response switching</span>
+              <input
+                type="checkbox"
+                checked={settings.responseSwitching}
+                onChange={(e) => onUpdate({ responseSwitching: e.target.checked })}
+                className="accent-pink-500"
+              />
+            </label>
+            <p className="text-[10px] text-white/40 -mt-2">
+              Randomly swap active-pair key labels each block
+            </p>
+          </>
+        ) : (
+          <SliderRow
+            label="Trial time"
+            value={settings.intervalMs}
+            min={1500}
+            max={5000}
+            step={100}
+            format={(v) => `${v}ms`}
+            onChange={(intervalMs) => onUpdate({ intervalMs })}
+          />
+        )}
 
         <label className="flex flex-col gap-1">
           <span className="text-xs text-white/70">Num trials</span>
