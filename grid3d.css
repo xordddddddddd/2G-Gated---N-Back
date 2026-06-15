@@ -102,14 +102,6 @@
   transform: translate3d(0, -10.05svmin, 0) rotateX(-90deg);
 }
 
-.grid3d-flash-wrong .grid3d-face {
-  filter: drop-shadow(0 0 8px #ffffff);
-}
-
-.grid3d-flash-correct .grid3d-face {
-  filter: drop-shadow(0 0 10px #4ade80);
-}
-
 .p0-0-0 { transform: translate3d(-20.1svmin, -20.1svmin, -20.1svmin); }
 .p0-0-1 { transform: translate3d(-20.1svmin, -20.1svmin, 0); }
 .p0-0-2 { transform: translate3d(-20.1svmin, -20.1svmin, 20.1svmin); }
