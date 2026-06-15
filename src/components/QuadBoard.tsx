@@ -41,9 +41,7 @@ export function QuadBoard({
   const gate = idle ? createIdleGate() : inputGate
   const displayStimulus = idle ? createIdleStimulus() : stimulus
   const showGates =
-    showGateOverlay &&
-    (settings.gameMode === '2g' || settings.enableInputGating || settings.gameMode === 'quad') &&
-    !idle
+    showGateOverlay && settings.gameMode === '2g' && !idle
 
   const boardHeight = settings.gridMode === '3d' ? '60.3svmin' : GRID_PX
 
@@ -96,7 +94,7 @@ export function QuadBoard({
         />
       </div>
 
-      <div className="relative shrink-0">
+      <div className="relative shrink-0 w-[60.3svmin] h-[60.3svmin]">
         {stimulusDisplay}
       </div>
 
