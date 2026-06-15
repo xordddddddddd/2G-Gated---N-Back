@@ -1,64 +1,63 @@
-# Fix Vercel showing `256f6c5` Initial commit
+# Your app is NOT on commit `256f6c5`
 
-If your Vercel deployment shows:
+That commit is a **blank Vercel template**. It does not exist in this GitHub repo.
 
-> **256f6c5** — Initial commit — Created from https://vercel.com/new
-
-your Vercel project is **not deploying from this GitHub repo**. That commit is a blank Vercel scaffold, not your app.
-
-Your real app is on GitHub `main` (currently `235e667` or newer).
-
-## Fix (5 minutes)
-
-### Step 1 — Open project settings
-
-1. Go to [vercel.com/dashboard](https://vercel.com/dashboard)
-2. Open your **2G-Gated---N-Back** project
-3. Click **Settings** → **Git**
-
-### Step 2 — Connect the correct repository
-
-If no repo is connected, or it shows the wrong repo:
-
-1. Click **Connect Git Repository**
-2. Choose **GitHub** → authorize if needed
-3. Select: **`xordddddddddd/2G-Gated---N-Back`**
-4. Set **Production Branch** to **`main`**
-
-### Step 3 — Deploy latest `main`
-
-1. Go to **Deployments**
-2. Click **Create Deployment** (top right)
-3. Branch: **`main`**
-4. Confirm the commit is **`235e667`** or newer (NOT `256f6c5`)
-5. Click **Deploy**
-
-### Step 4 — Verify
-
-Open your live URL. On the **Home** tab you should see:
-
-- **Home** and **Settings** tabs at the top
-- **Quad Training** title
-- Black game screen with grid + A/F/J/L keys when you press Start
-- Build hash **`v235e667`** (or newer) at the bottom of the home card
+Your real app is on **`main`** (see latest commit on GitHub).
 
 ---
 
-## Alternative: delete and re-import
+## Use GitHub Pages (recommended — works in 2 steps)
 
-1. Delete the current Vercel project
-2. Open: https://vercel.com/new/clone?repository-url=https://github.com/xordddddddddd/2G-Gated---N-Back
-3. Framework: **Vite**
-4. Build command: `npm run build`
-5. Output directory: `dist`
-6. Deploy
+### Step 1 — Enable Pages
+
+Open: **https://github.com/xordddddddddd/2G-Gated---N-Back/settings/pages**
+
+| Setting | Value |
+|---------|--------|
+| Source | **Deploy from a branch** |
+| Branch | **gh-pages** |
+| Folder | **/ (root)** |
+
+Click **Save**.
+
+### Step 2 — Wait for deploy workflow
+
+1. Open: **https://github.com/xordddddddddd/2G-Gated---N-Back/actions**
+2. Wait for **"Deploy to GitHub Pages"** to finish (green check)
+3. If it didn't run, click it → **Run workflow**
+
+### Your live URL
+
+**https://xordddddddddd.github.io/2G-Gated---N-Back/**
+
+You should see **"2G Quad N-Back"** with Home + Settings tabs.
 
 ---
 
-## Alternative: GitHub Pages (no Vercel)
+## Why Vercel stays on `256f6c5`
 
-1. Open https://github.com/xordddddddddd/2G-Gated---N-Back/settings/pages
-2. Source: **GitHub Actions**
-3. After the next push to `main`, the app will be at:
+Your Vercel project was created from **vercel.com/new** as an empty template. It is **not** pulling code from this GitHub repository — even if Git looks connected, it may be linked to a different repo Vercel created.
 
-   **https://xordddddddddd.github.io/2G-Gated---N-Back/**
+### Fix Vercel (only if you want Vercel specifically)
+
+1. **Delete** the current Vercel project entirely
+2. Re-import using this exact link:
+
+   **https://vercel.com/new/clone?repository-url=https://github.com/xordddddddddd/2G-Gated---N-Back**
+
+3. Confirm the first deployment shows commit **`a261871`** or newer — NOT `256f6c5`
+
+Do **not** use "Redeploy" on old deployments.
+
+---
+
+## Verify the correct version
+
+| Old (wrong) | New (correct) |
+|-------------|---------------|
+| 3-second countdown | Starts immediately |
+| Cards below grid | Grid with A/F/J/L keys around it |
+| No Settings tab | Home + Settings tabs |
+| Commit `256f6c5` | Commit `a261871`+ |
+
+Build hash on home screen should show **`va261871`** or newer.

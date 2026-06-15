@@ -56,6 +56,21 @@ export function MenuScreen({
                 </p>
               </header>
 
+              <div className="p-4 rounded-xl bg-accent/10 border border-accent/30 text-sm space-y-2">
+                <p className="text-accent font-medium">Live on GitHub Pages</p>
+                <a
+                  href="https://xordddddddddd.github.io/2G-Gated---N-Back/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent underline break-all text-xs"
+                >
+                  xordddddddddd.github.io/2G-Gated---N-Back
+                </a>
+                <p className="text-[10px] text-muted">
+                  Enable Pages: repo Settings → Pages → branch <strong>gh-pages</strong>
+                </p>
+              </div>
+
               <div className="p-4 rounded-xl bg-surface-raised border border-border text-sm text-muted space-y-2">
                 <p>
                   <span className="text-text font-medium">{settings.nLevel}-Back</span>
