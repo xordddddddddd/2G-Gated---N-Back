@@ -1,4 +1,4 @@
-/* 3D grid — mirrors soamsy/quad-box Grid.svelte (pure transform, no translate/rotate properties) */
+/* 3D grid — must load outside Tailwind (Tailwind strips translate3d Z components) */
 
 .grid3d-viewport {
   position: absolute;
@@ -49,18 +49,18 @@
   user-select: none;
 }
 
-.grid3d-fr-z0 { transform: translateZ(-30.15svmin); }
-.grid3d-fr-z1 { transform: translateZ(-10.05svmin); }
-.grid3d-fr-z2 { transform: translateZ(10.05svmin); }
-.grid3d-fr-z3 { transform: translateZ(30.15svmin); }
-.grid3d-fr-y0 { transform: translateY(-30.15svmin) rotateX(90deg); }
-.grid3d-fr-y1 { transform: translateY(-10.05svmin) rotateX(90deg); }
-.grid3d-fr-y2 { transform: translateY(10.05svmin) rotateX(90deg); }
-.grid3d-fr-y3 { transform: translateY(30.15svmin) rotateX(90deg); }
-.grid3d-fr-x0 { transform: translateX(-30.15svmin) rotateY(90deg); }
-.grid3d-fr-x1 { transform: translateX(-10.05svmin) rotateY(90deg); }
-.grid3d-fr-x2 { transform: translateX(10.05svmin) rotateY(90deg); }
-.grid3d-fr-x3 { transform: translateX(30.15svmin) rotateY(90deg); }
+.grid3d-fr-z0 { transform: translate3d(0, 0, -30.15svmin); }
+.grid3d-fr-z1 { transform: translate3d(0, 0, -10.05svmin); }
+.grid3d-fr-z2 { transform: translate3d(0, 0, 10.05svmin); }
+.grid3d-fr-z3 { transform: translate3d(0, 0, 30.15svmin); }
+.grid3d-fr-y0 { transform: translate3d(0, -30.15svmin, 0) rotateX(90deg); }
+.grid3d-fr-y1 { transform: translate3d(0, -10.05svmin, 0) rotateX(90deg); }
+.grid3d-fr-y2 { transform: translate3d(0, 10.05svmin, 0) rotateX(90deg); }
+.grid3d-fr-y3 { transform: translate3d(0, 30.15svmin, 0) rotateX(90deg); }
+.grid3d-fr-x0 { transform: translate3d(-30.15svmin, 0, 0) rotateY(90deg); }
+.grid3d-fr-x1 { transform: translate3d(-10.05svmin, 0, 0) rotateY(90deg); }
+.grid3d-fr-x2 { transform: translate3d(10.05svmin, 0, 0) rotateY(90deg); }
+.grid3d-fr-x3 { transform: translate3d(30.15svmin, 0, 0) rotateY(90deg); }
 
 .grid3d-cell {
   position: absolute;
@@ -79,27 +79,27 @@
 }
 
 .grid3d-face-front {
-  transform: translate3d(0, 0, 10svmin);
+  transform: translate3d(0, 0, 10.05svmin);
 }
 
 .grid3d-face-back {
-  transform: translate3d(0, 0, -10svmin) rotateY(180deg);
+  transform: translate3d(0, 0, -10.05svmin) rotateY(180deg);
 }
 
 .grid3d-face-right {
-  transform: translate3d(10svmin, 0, 0) rotateY(-90deg);
+  transform: translate3d(10.05svmin, 0, 0) rotateY(-90deg);
 }
 
 .grid3d-face-left {
-  transform: translate3d(-10svmin, 0, 0) rotateY(90deg);
+  transform: translate3d(-10.05svmin, 0, 0) rotateY(90deg);
 }
 
 .grid3d-face-top {
-  transform: translate3d(0, 10svmin, 0) rotateX(90deg);
+  transform: translate3d(0, 10.05svmin, 0) rotateX(90deg);
 }
 
 .grid3d-face-bottom {
-  transform: translate3d(0, -10svmin, 0) rotateX(-90deg);
+  transform: translate3d(0, -10.05svmin, 0) rotateX(-90deg);
 }
 
 .grid3d-flash-wrong .grid3d-face {

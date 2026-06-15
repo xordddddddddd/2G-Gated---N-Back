@@ -11,6 +11,7 @@ import {
   streamFromKey,
 } from '../lib/response'
 import { computeStats, suggestNLevel } from '../lib/stats'
+import { cancelTrialClock, startTrialClock } from '../lib/trialClockWorker'
 import type {
   GamePhase,
   GameSession,
@@ -76,8 +77,8 @@ export function useGame() {
   const [, setConsecutiveWins] = useState(0)
   const [, setConsecutiveLosses] = useState(0)
 
-  const trialTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const stopTrialClockRef = useRef<(() => void) | null>(null)
   const trialClockIdRef = useRef(0)
   const speakTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sessionStartRef = useRef<number | null>(null)
@@ -100,10 +101,9 @@ export function useGame() {
 
   const clearTimers = useCallback(() => {
     trialClockIdRef.current += 1
-    if (trialTimeoutRef.current) {
-      clearTimeout(trialTimeoutRef.current)
-      trialTimeoutRef.current = null
-    }
+    stopTrialClockRef.current?.()
+    stopTrialClockRef.current = null
+    cancelTrialClock()
     if (advanceTimeoutRef.current) {
       clearTimeout(advanceTimeoutRef.current)
       advanceTimeoutRef.current = null
@@ -440,24 +440,24 @@ export function useGame() {
       speakTimeoutRef.current = setTimeout(() => {}, 900)
     }
 
-    trialTimeoutRef.current = setTimeout(() => {
-      if (trialClockIdRef.current !== clockId) return
+    stopTrialClockRef.current?.()
+    stopTrialClockRef.current = startTrialClock(clockId, settings.intervalMs, (id) => {
+      if (trialClockIdRef.current !== id) return
       if (!respondedThisTrialRef.current && scorable) {
         finishTrialRef.current()
       }
       advanceTimeoutRef.current = setTimeout(() => {
-        if (trialClockIdRef.current === clockId) {
+        if (trialClockIdRef.current === id) {
           advanceTrialRef.current()
         }
       }, 200)
-    }, settings.intervalMs)
+    })
 
     return () => {
       trialClockIdRef.current += 1
-      if (trialTimeoutRef.current) {
-        clearTimeout(trialTimeoutRef.current)
-        trialTimeoutRef.current = null
-      }
+      stopTrialClockRef.current?.()
+      stopTrialClockRef.current = null
+      cancelTrialClock()
       if (advanceTimeoutRef.current) {
         clearTimeout(advanceTimeoutRef.current)
         advanceTimeoutRef.current = null
@@ -468,7 +468,7 @@ export function useGame() {
       }
       stopSpeech()
     }
-  }, [phase, trialIndex, trials, settings.intervalMs, settings.soundEnabled, settings.nLevel])
+  }, [phase, trialIndex, settings.intervalMs, settings.soundEnabled, settings.nLevel])
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {

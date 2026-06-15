@@ -15,6 +15,12 @@ export function usePointerPress(onPress: () => void, disabled = false) {
         pointerPressedRef.current = true
         onPressRef.current()
       },
+      onPointerUp: () => {
+        pointerPressedRef.current = false
+      },
+      onPointerCancel: () => {
+        pointerPressedRef.current = false
+      },
       onClick: (e: MouseEvent<HTMLButtonElement>) => {
         e.preventDefault()
         if (pointerPressedRef.current) {

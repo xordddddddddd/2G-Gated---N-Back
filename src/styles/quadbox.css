@@ -90,7 +90,8 @@
 .qb-play-btn {
   cursor: pointer;
   user-select: none;
-  touch-action: manipulation;
+  touch-action: none;
+  -webkit-touch-callout: none;
   font-family: Georgia, 'Times New Roman', serif;
   font-size: 3rem;
   line-height: 1;
@@ -119,7 +120,8 @@
 .qb-key-btn {
   cursor: pointer;
   user-select: none;
-  touch-action: manipulation;
+  touch-action: none;
+  -webkit-touch-callout: none;
   width: 100%;
   flex: 1 1 auto;
   display: grid;

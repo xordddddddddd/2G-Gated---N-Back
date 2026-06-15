@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-@import "./styles/grid3d.css";
 @import "./styles/quadbox.css";
 
 @theme {
