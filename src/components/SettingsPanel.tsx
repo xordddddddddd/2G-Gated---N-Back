@@ -229,7 +229,7 @@ export function SettingsPanel({ settings, onUpdate, onReset }: SettingsPanelProp
             ))}
             <Toggle
               label="Input gating"
-              hint="Switch active streams each trial (2G training)"
+              hint="Switch active stream pairs each block (2G training)"
               checked={settings.enableInputGating}
               onChange={(enableInputGating) => onUpdate({ enableInputGating })}
             />

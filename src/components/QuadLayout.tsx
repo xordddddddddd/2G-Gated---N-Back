@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { formatPlayTime } from '../lib/history'
 import { getKeyForStream } from '../lib/response'
 import { createIdleGate, createIdleStimulus } from '../lib/sequence'
+import { BlockCueOverlay } from './BlockCueOverlay'
+import { GateBar } from './GateBar'
 import { Grid3DOverlay } from './Grid3DOverlay'
 import { QuadBoxKey } from './QuadBoxKey'
 import { SettingsSidebar } from './SettingsSidebar'
@@ -37,6 +39,8 @@ export function QuadLayout({
   pressedStreams: _pressedStreams,
   wrongStreams,
   correctStreams,
+  blockCue,
+  awaitingBlockCue,
   handlePlay,
   stopSession,
   dismissResults,
@@ -152,13 +156,34 @@ export function QuadLayout({
 
       {helpOpen && (
         <div className="px-6 py-2 text-xs text-white/50 border-b border-white/10 text-center shrink-0 z-20">
-          Press <b>A</b> Position · <b>F</b> Color · <b>J</b> Shape · <b>L</b> Audio when they match n-back.
-          {' · '}
-          <b>Space</b> Play · <b>Esc</b> Stop
+          {settings.gameMode === '2g' ? (
+            <>
+              Attend to the active pair shown each block. Press stream keys when the output gate rule
+              is satisfied (OR / AND / XOR).
+              {' · '}
+              <b>Space</b> Play · <b>Esc</b> Stop
+            </>
+          ) : (
+            <>
+              Press <b>A</b> Position · <b>F</b> Color · <b>J</b> Shape · <b>L</b> Audio when they match
+              n-back.
+              {' · '}
+              <b>Space</b> Play · <b>Esc</b> Stop
+            </>
+          )}
           <button type="button" onClick={() => setHelpOpen(false)} className="ml-3 underline">
             dismiss
           </button>
         </div>
+      )}
+
+      {settings.gameMode === '2g' && isPlaying && !showIdle && (
+        <GateBar
+          gameMode={settings.gameMode}
+          inputGate={gate}
+          outputGate={trial?.outputGate ?? 'or'}
+          visible
+        />
       )}
 
       <div className="flex-auto flex relative overflow-hidden min-h-0">
@@ -171,6 +196,15 @@ export function QuadLayout({
               rotationSpeed={settings.rotationSpeed}
               gameMode={settings.gameMode}
               gridMode={settings.gridMode}
+            />
+          )}
+
+          {awaitingBlockCue && blockCue && (
+            <BlockCueOverlay
+              inputGate={blockCue.inputGate}
+              outputGate={blockCue.outputGate}
+              nLevel={nLevel}
+              blockNumber={blockCue.blockNumber}
             />
           )}
 

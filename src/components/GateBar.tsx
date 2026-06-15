@@ -10,11 +10,11 @@ interface GateBarProps {
 
 function activeStreamLabels(gate: InputGate): string {
   const parts: string[] = []
-  if (gate.position) parts.push(STREAM_LABELS.position.slice(0, 3).toUpperCase())
-  if (gate.letter) parts.push(STREAM_LABELS.letter.slice(0, 3).toUpperCase())
-  if (gate.color) parts.push(STREAM_LABELS.color.slice(0, 3).toUpperCase())
-  if (gate.shape) parts.push(STREAM_LABELS.shape.slice(0, 3).toUpperCase())
-  return parts.join(' · ') || '—'
+  if (gate.position) parts.push(STREAM_LABELS.position)
+  if (gate.letter) parts.push(STREAM_LABELS.letter)
+  if (gate.color) parts.push(STREAM_LABELS.color)
+  if (gate.shape) parts.push(STREAM_LABELS.shape)
+  return parts.join(' + ') || '—'
 }
 
 export function GateBar({ gameMode, inputGate, outputGate, visible }: GateBarProps) {
@@ -25,11 +25,12 @@ export function GateBar({ gameMode, inputGate, outputGate, visible }: GateBarPro
   return (
     <div className="flex items-center justify-center gap-6 text-[11px] tracking-[0.2em] uppercase text-white/45 mb-3 select-none pointer-events-none">
       <span>
-        IN <span className="text-white/70">{activeStreamLabels(inputGate)}</span>
+        ATTEND{' '}
+        <span className="text-white/70">{activeStreamLabels(inputGate)}</span>
       </span>
       <span className="text-white/25">|</span>
       <span>
-        OUT{' '}
+        GATE{' '}
         <span className="text-white/80 font-semibold">
           {output.symbol} {output.label}
         </span>

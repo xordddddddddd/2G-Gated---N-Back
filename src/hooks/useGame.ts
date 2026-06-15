@@ -1,12 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { resumeAudio, setVoicePreference, speakLetter, stopSpeech } from '../lib/audio'
+import {
+  get2GBlockLength,
+  get2GPlayedIndex,
+  is2GBlockStart,
+  is2GTrialScorable,
+} from '../lib/constants'
 import { getGameLabel } from '../lib/constants'
 import { shouldRespond, getActiveStreams } from '../lib/gating'
 import { addPlayTime, getTodayPlayTimeMs, saveSession } from '../lib/history'
 import { generateTrials } from '../lib/sequence'
 import { loadSettings, saveSettings, resetSettings } from '../lib/settings'
 import {
+  evaluate2GResponse,
   evaluatePerStreamResponse,
+  getExpectedPressedStreams,
   getStreamMatchesForTrial,
   streamFromKey,
 } from '../lib/response'
@@ -16,6 +24,8 @@ import type {
   GamePhase,
   GameSession,
   GameSettings,
+  InputGate,
+  OutputGate,
   SessionStats,
   Stream,
   TrialFeedback,
@@ -64,6 +74,23 @@ function getCorrectStreams(
   return correct
 }
 
+function get2GGlowStreams(
+  pressed: Set<Stream>,
+  streamMatchesMap: Record<Stream, boolean>,
+  gate: { position: boolean; letter: boolean; color: boolean; shape: boolean },
+  outputGate: OutputGate,
+): { correct: Set<Stream>; wrong: Set<Stream> } {
+  const expected = getExpectedPressedStreams(streamMatchesMap, gate, outputGate)
+  const active = getActiveStreams(gate)
+  const correct = new Set<Stream>()
+  const wrong = new Set<Stream>()
+  for (const stream of active) {
+    if (expected.has(stream) && pressed.has(stream)) correct.add(stream)
+    else if (expected.has(stream) !== pressed.has(stream)) wrong.add(stream)
+  }
+  return { correct, wrong }
+}
+
 export function useGame() {
   const [phase, setPhase] = useState<GamePhase>('ready')
   const [settings, setSettings] = useState<GameSettings>(() => {
@@ -79,6 +106,12 @@ export function useGame() {
   const [pressedStreams, setPressedStreams] = useState<Set<Stream>>(new Set())
   const [wrongStreams, setWrongStreams] = useState<Set<Stream>>(new Set())
   const [correctStreams, setCorrectStreams] = useState<Set<Stream>>(new Set())
+  const [blockCue, setBlockCue] = useState<{
+    inputGate: InputGate
+    outputGate: OutputGate
+    blockNumber: number
+  } | null>(null)
+  const [awaitingBlockCue, setAwaitingBlockCue] = useState(false)
   const [stats, setStats] = useState<SessionStats | null>(null)
   const [suggestedN, setSuggestedN] = useState(settings.nLevel)
   const [todayPlayMs, setTodayPlayMs] = useState(() => getTodayPlayTimeMs())
@@ -100,9 +133,15 @@ export function useGame() {
 
   const currentTrial = trials[trialIndex] ?? null
   const nLevel = settings.nLevel
-  const isScorable = trialIndex >= nLevel
+  const isScorable =
+    settings.gameMode === '2g'
+      ? is2GTrialScorable(trialIndex, nLevel)
+      : trialIndex >= nLevel
   const playedTrials = settings.trialCount
-  const playedIndex = Math.max(trialIndex - nLevel, 0)
+  const playedIndex =
+    settings.gameMode === '2g'
+      ? get2GPlayedIndex(trialIndex, nLevel)
+      : Math.max(trialIndex - nLevel, 0)
   const trialsRemaining = Math.max(playedTrials - playedIndex - 1, 0)
   const isPlaying = phase === 'playing'
 
@@ -166,7 +205,35 @@ export function useGame() {
     let streamCorrect: Partial<Record<Stream, boolean>> = {}
     const activeStreams = getActiveStreams(currentTrial.inputGate)
 
-    if (settings.responseMode === 'gated') {
+    if (settings.gameMode === '2g') {
+      const streamMatchesMap = getStreamMatchesForTrial(
+        currentTrial.stimulus,
+        past.stimulus,
+        currentTrial.inputGate,
+      )
+      const result = evaluate2GResponse(
+        pressed,
+        streamMatchesMap,
+        currentTrial.inputGate,
+        currentTrial.outputGate,
+      )
+      trialFeedback = result.feedback
+      correct = result.correct
+      shouldMatch = getExpectedPressedStreams(
+        streamMatchesMap,
+        currentTrial.inputGate,
+        currentTrial.outputGate,
+      ).size > 0
+      streamCorrect = buildStreamCorrect(pressed, streamMatchesMap, currentTrial.inputGate)
+      const glow = get2GGlowStreams(
+        pressed,
+        streamMatchesMap,
+        currentTrial.inputGate,
+        currentTrial.outputGate,
+      )
+      setCorrectStreams(glow.correct)
+      setWrongStreams(glow.wrong)
+    } else if (settings.responseMode === 'gated') {
       shouldMatch = shouldRespond(
         currentTrial.stimulus,
         past.stimulus,
@@ -240,7 +307,15 @@ export function useGame() {
 
   const handleStreamPress = useCallback(
     (stream: Stream) => {
-      if (!currentTrial || respondedThisTrialRef.current || !isScorable || phase !== 'playing') return
+      if (
+        !currentTrial ||
+        respondedThisTrialRef.current ||
+        !isScorable ||
+        phase !== 'playing' ||
+        awaitingBlockCue
+      ) {
+        return
+      }
       if (!currentTrial.inputGate[stream]) return
       setPressedStreams((prev) => {
         const next = new Set(prev).add(stream)
@@ -248,7 +323,7 @@ export function useGame() {
         return next
       })
     },
-    [currentTrial, isScorable, phase],
+    [currentTrial, isScorable, phase, awaitingBlockCue],
   )
 
   const endSession = useCallback(
@@ -331,6 +406,8 @@ export function useGame() {
       setPressedStreams(new Set())
       setWrongStreams(new Set())
       setCorrectStreams(new Set())
+      setBlockCue(null)
+      setAwaitingBlockCue(false)
       if (cancelled) {
         setTrials([])
         setStats(null)
@@ -348,13 +425,30 @@ export function useGame() {
     setWrongStreams(new Set())
     setCorrectStreams(new Set())
 
-    if (trialIndex + 1 >= trials.length) {
+    const nextIndex = trialIndex + 1
+    if (nextIndex >= trials.length) {
       endSession(false)
       return
     }
 
-    setTrialIndex((i) => i + 1)
-  }, [trialIndex, trials.length, endSession])
+    if (
+      settings.gameMode === '2g' &&
+      is2GBlockStart(nextIndex, settings.nLevel) &&
+      nextIndex > 0
+    ) {
+      const nextTrial = trials[nextIndex]
+      setBlockCue({
+        inputGate: nextTrial.inputGate,
+        outputGate: nextTrial.outputGate,
+        blockNumber: Math.floor(nextIndex / get2GBlockLength(settings.nLevel)) + 1,
+      })
+      setAwaitingBlockCue(true)
+      setTrialIndex(nextIndex)
+      return
+    }
+
+    setTrialIndex(nextIndex)
+  }, [trialIndex, trials, endSession, settings.gameMode, settings.nLevel])
 
   finishTrialRef.current = finishTrial
   advanceTrialRef.current = advanceTrial
@@ -365,7 +459,8 @@ export function useGame() {
     cancelledRef.current = false
     const generated = generateTrials(settings)
     setTrials(generated)
-    setTrialIndex(nLevel)
+    const startAt = settings.gameMode === '2g' ? 0 : nLevel
+    setTrialIndex(startAt)
     setResults([])
     setFeedback(null)
     setRespondedThisTrial(false)
@@ -376,8 +471,21 @@ export function useGame() {
     setCorrectStreams(new Set())
     setStats(null)
     sessionStartRef.current = Date.now()
+
+    if (settings.gameMode === '2g' && generated[0]) {
+      setBlockCue({
+        inputGate: generated[0].inputGate,
+        outputGate: generated[0].outputGate,
+        blockNumber: 1,
+      })
+      setAwaitingBlockCue(true)
+    } else {
+      setBlockCue(null)
+      setAwaitingBlockCue(false)
+    }
+
     setPhase('playing')
-  }, [settings, clearTimers])
+  }, [settings, clearTimers, nLevel])
 
   const handlePlay = useCallback(() => {
     if (settings.tutorialMode) {
@@ -431,7 +539,23 @@ export function useGame() {
   }, [])
 
   useEffect(() => {
-    if (phase !== 'playing') return
+    if (!awaitingBlockCue) return
+    const timer = setTimeout(() => setAwaitingBlockCue(false), 2500)
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        e.preventDefault()
+        setAwaitingBlockCue(false)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [awaitingBlockCue])
+
+  useEffect(() => {
+    if (phase !== 'playing' || awaitingBlockCue) return
 
     const trial = trials[trialIndex]
     if (!trial) return
@@ -472,11 +596,11 @@ export function useGame() {
       }
       stopSpeech()
     }
-  }, [phase, trialIndex, settings.intervalMs, settings.soundEnabled, settings.nLevel])
+  }, [phase, trialIndex, settings.intervalMs, settings.soundEnabled, settings.nLevel, awaitingBlockCue])
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (phase !== 'playing' || respondedThisTrialRef.current || !isScorable) return
+      if (phase !== 'playing' || respondedThisTrialRef.current || !isScorable || awaitingBlockCue) return
 
       const stream = streamFromKey(e.key, settings.keys)
       if (stream) {
@@ -501,6 +625,7 @@ export function useGame() {
     settings.responseMode,
     handleStreamPress,
     currentTrial,
+    awaitingBlockCue,
   ])
 
   useEffect(() => () => clearTimers(), [clearTimers])
@@ -524,6 +649,8 @@ export function useGame() {
     pressedStreams,
     wrongStreams,
     correctStreams,
+    blockCue,
+    awaitingBlockCue,
     handlePlay,
     startSession,
     stopSession,

@@ -119,7 +119,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     id: 'input-gate',
     title: 'Input Gating',
     kind: 'info',
-    body: 'The input gate shows which streams are active on each trial. Only compare streams that are highlighted — ignore the rest. This trains flexible attention switching between information channels.',
+    body: 'Each block shows which pair of streams to attend to. Only compare the highlighted streams — ignore the rest for the entire block. Pairs switch between blocks (Position + Audio, or Color + Shape).',
     demoStimulus: stim(6, 'S', 'purple', 'star'),
     demoInputGate: gate(false, false, true, true),
     demoOutputGate: 'and',

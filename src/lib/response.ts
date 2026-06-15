@@ -1,10 +1,92 @@
-import type { InputGate, OutputGate, OutputGateMode, Stream, StreamKeys } from '../types/game'
+import type { InputGate, OutputGate, OutputGateMode, Stream, StreamKeys, GameMode } from '../types/game'
 import { streamMatches, getActiveStreams } from './gating'
+import { get2GBlockIndex } from './constants'
 
-export function pickOutputGate(index: number, mode: OutputGateMode): OutputGate {
+export function pickOutputGate(
+  index: number,
+  mode: OutputGateMode,
+  gameMode?: GameMode,
+  nLevel?: number,
+): OutputGate {
   if (mode !== 'random') return mode
   const gates: OutputGate[] = ['or', 'and', 'xor']
+  if (gameMode === '2g' && nLevel !== undefined) {
+    const blockIndex = get2GBlockIndex(index, nLevel)
+    return gates[blockIndex % gates.length]
+  }
   return gates[index % gates.length]
+}
+
+export function getExpectedPressedStreams(
+  streamMatchesMap: Record<Stream, boolean>,
+  gate: InputGate,
+  outputGate: OutputGate,
+): Set<Stream> {
+  const active = getActiveStreams(gate)
+  const expected = new Set<Stream>()
+
+  if (active.length === 0) return expected
+
+  if (outputGate === 'or') {
+    for (const stream of active) {
+      if (streamMatchesMap[stream]) expected.add(stream)
+    }
+    return expected
+  }
+
+  if (active.length === 1) {
+    if (streamMatchesMap[active[0]]) expected.add(active[0])
+    return expected
+  }
+
+  const [s1, s2] = active
+  const m1 = streamMatchesMap[s1]
+  const m2 = streamMatchesMap[s2]
+
+  switch (outputGate) {
+    case 'xor':
+      if (m1 && !m2) expected.add(s1)
+      else if (!m1 && m2) expected.add(s2)
+      break
+    case 'and':
+      if (m1 && m2) {
+        expected.add(s1)
+        expected.add(s2)
+      }
+      break
+  }
+
+  return expected
+}
+
+export function evaluate2GResponse(
+  pressed: Set<Stream>,
+  streamMatchesMap: Record<Stream, boolean>,
+  gate: InputGate,
+  outputGate: OutputGate,
+): { correct: boolean; feedback: 'hit' | 'miss' | 'false-alarm' | 'correct-reject' } {
+  const expected = getExpectedPressedStreams(streamMatchesMap, gate, outputGate)
+  const active = getActiveStreams(gate)
+
+  for (const stream of pressed) {
+    if (!gate[stream]) {
+      return { correct: false, feedback: 'false-alarm' }
+    }
+  }
+
+  for (const stream of active) {
+    const shouldPress = expected.has(stream)
+    const didPress = pressed.has(stream)
+    if (shouldPress !== didPress) {
+      return {
+        correct: false,
+        feedback: shouldPress && !didPress ? 'miss' : 'false-alarm',
+      }
+    }
+  }
+
+  if (expected.size > 0) return { correct: true, feedback: 'hit' }
+  return { correct: true, feedback: 'correct-reject' }
 }
 
 export function getStreamMatchesForTrial(

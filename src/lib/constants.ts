@@ -118,6 +118,54 @@ export const INPUT_GATE_PATTERNS: InputGatePattern[] = [
   { position: true, letter: true, color: true, shape: true },
 ]
 
+/** 2G block-level input pairs — attend to 2 of 4 streams per block (PDF spec). */
+export const TWO_G_INPUT_PAIRS: InputGate[] = [
+  { position: true, letter: true, color: false, shape: false },
+  { position: false, letter: false, color: true, shape: true },
+]
+
+export const TWO_G_BLOCK_SCORABLE_TRIALS = 20
+
+export function get2GBlockLength(nLevel: number): number {
+  return TWO_G_BLOCK_SCORABLE_TRIALS + nLevel
+}
+
+export function get2GBlockIndex(trialIndex: number, nLevel: number): number {
+  return Math.floor(trialIndex / get2GBlockLength(nLevel))
+}
+
+export function is2GBlockStart(trialIndex: number, nLevel: number): boolean {
+  return trialIndex % get2GBlockLength(nLevel) === 0
+}
+
+export function get2GActivePairLabel(gate: InputGate): string {
+  if (gate.position && gate.letter) return 'Position + Audio'
+  if (gate.color && gate.shape) return 'Color + Shape'
+  const parts: string[] = []
+  if (gate.position) parts.push('Position')
+  if (gate.letter) parts.push('Audio')
+  if (gate.color) parts.push('Color')
+  if (gate.shape) parts.push('Shape')
+  return parts.join(' + ') || '—'
+}
+
+export function get2GTotalTrials(trialCount: number, nLevel: number): number {
+  const numBlocks = Math.max(1, Math.ceil(trialCount / TWO_G_BLOCK_SCORABLE_TRIALS))
+  return numBlocks * get2GBlockLength(nLevel)
+}
+
+export function is2GTrialScorable(trialIndex: number, nLevel: number): boolean {
+  const posInBlock = trialIndex % get2GBlockLength(nLevel)
+  return posInBlock >= nLevel
+}
+
+export function get2GPlayedIndex(trialIndex: number, nLevel: number): number {
+  const blockLength = get2GBlockLength(nLevel)
+  const blockIndex = Math.floor(trialIndex / blockLength)
+  const posInBlock = trialIndex % blockLength
+  return blockIndex * TWO_G_BLOCK_SCORABLE_TRIALS + Math.max(posInBlock - nLevel, 0)
+}
+
 interface InputGatePattern {
   position: boolean
   letter: boolean

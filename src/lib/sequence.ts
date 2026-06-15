@@ -1,4 +1,4 @@
-import { COLORS, INPUT_GATE_PATTERNS, getLettersForMode, getShapesForMode } from './constants'
+import { COLORS, TWO_G_BLOCK_SCORABLE_TRIALS, TWO_G_INPUT_PAIRS, get2GBlockIndex, get2GBlockLength, getLettersForMode, getShapesForMode } from './constants'
 import { randomPosition3D } from './grid3d'
 import { pickOutputGate } from './response'
 import type { GameSettings, InputGate, OutputGate, Stimulus, Trial } from '../types/game'
@@ -28,7 +28,7 @@ function createStimulus(
 
 function pickInputGate(
   index: number,
-  settings: Pick<GameSettings, 'enableInputGating' | 'enabledStreams' | 'rotationSpeed' | 'gameMode'>,
+  settings: Pick<GameSettings, 'enableInputGating' | 'enabledStreams' | 'gameMode' | 'nLevel'>,
 ): InputGate {
   if (settings.gameMode === 'dual') {
     return {
@@ -41,17 +41,17 @@ function pickInputGate(
   if (settings.gameMode === 'quad') {
     return { ...settings.enabledStreams }
   }
-  if (!settings.enableInputGating) {
-    return { ...settings.enabledStreams }
+  if (settings.gameMode === '2g') {
+    const blockIndex = get2GBlockIndex(index, settings.nLevel)
+    const pair = TWO_G_INPUT_PAIRS[blockIndex % TWO_G_INPUT_PAIRS.length]
+    return {
+      position: pair.position && settings.enabledStreams.position,
+      letter: pair.letter && settings.enabledStreams.letter,
+      color: pair.color && settings.enabledStreams.color,
+      shape: pair.shape && settings.enabledStreams.shape,
+    }
   }
-  const step = Math.max(1, Math.round(settings.rotationSpeed / 10))
-  const pattern = INPUT_GATE_PATTERNS[Math.floor(index / step) % INPUT_GATE_PATTERNS.length]
-  return {
-    position: pattern.position && settings.enabledStreams.position,
-    letter: pattern.letter && settings.enabledStreams.letter,
-    color: pattern.color && settings.enabledStreams.color,
-    shape: pattern.shape && settings.enabledStreams.shape,
-  }
+  return { ...settings.enabledStreams }
 }
 
 function copyStreamFrom(target: Stimulus, source: Stimulus, gate: InputGate): Stimulus {
@@ -189,11 +189,39 @@ export function generateTrials(settings: GameSettings): Trial[] {
   const nLevel = settings.nLevel
   const trials: Trial[] = []
 
+  if (settings.gameMode === '2g') {
+    const blockLength = get2GBlockLength(nLevel)
+    const numBlocks = Math.max(1, Math.ceil(settings.trialCount / TWO_G_BLOCK_SCORABLE_TRIALS))
+    const totalTrials = numBlocks * blockLength
+
+    for (let i = 0; i < totalTrials; i++) {
+      const posInBlock = i % blockLength
+      const inputGate = pickInputGate(i, settings)
+      const outputGate = pickOutputGate(i, settings.outputGateMode, settings.gameMode, settings.nLevel)
+
+      if (posInBlock < nLevel) {
+        trials.push({ stimulus: createStimulus(settings), inputGate, outputGate })
+        continue
+      }
+
+      const past = trials[i - nLevel].stimulus
+      const shouldMatch = Math.random() < settings.matchProbability
+      let stimulus = shouldMatch
+        ? generateMatchTrial(past, inputGate, outputGate, settings)
+        : generateNonMatchTrial(past, inputGate, outputGate, settings)
+
+      stimulus = applyInterference(stimulus, trials, i, nLevel, inputGate, settings.interference)
+      trials.push({ stimulus, inputGate, outputGate })
+    }
+
+    return trials
+  }
+
   for (let i = 0; i < nLevel; i++) {
     trials.push({
       stimulus: createStimulus(settings),
       inputGate: pickInputGate(i, settings),
-      outputGate: pickOutputGate(i, settings.outputGateMode),
+      outputGate: pickOutputGate(i, settings.outputGateMode, settings.gameMode, settings.nLevel),
     })
   }
 
@@ -201,7 +229,7 @@ export function generateTrials(settings: GameSettings): Trial[] {
     const idx = nLevel + i
     const past = trials[idx - nLevel].stimulus
     const inputGate = pickInputGate(idx, settings)
-    const outputGate = pickOutputGate(idx, settings.outputGateMode)
+    const outputGate = pickOutputGate(idx, settings.outputGateMode, settings.gameMode, settings.nLevel)
     const shouldMatch = Math.random() < settings.matchProbability
 
     let stimulus = shouldMatch

@@ -102,8 +102,9 @@ export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onTogg
       ...(next === '2g'
         ? {
             enableInputGating: true,
-            responseMode: 'gated' as const,
+            responseMode: 'per-stream' as const,
             outputGateMode: 'random' as const,
+            trialCount: 20,
           }
         : {
             enableInputGating: false,
