@@ -1,4 +1,4 @@
-/* 3D grid — Quad Box rotate3D */
+/* 3D grid — mirrors soamsy/quad-box Grid.svelte (pure transform, no translate/rotate properties) */
 
 .grid3d-viewport {
   position: absolute;
@@ -9,27 +9,31 @@
   perspective: 60svmin;
   perspective-origin: 50% 50%;
   overflow: hidden;
-  transform-style: flat;
+  user-select: none;
 }
 
 .grid3d-scene {
   position: absolute;
+  inset: 0;
+  margin: auto;
   width: 60.3svmin;
   height: 60.3svmin;
   transform-style: preserve-3d;
-  translate: 0 0 -10svmin;
+  transform: translateZ(-10svmin);
   animation: grid3d-spin linear infinite;
   will-change: transform;
 }
 
 @keyframes grid3d-spin {
   from {
-    transform: rotateX(var(--rotation-start-x, 0deg))
+    transform: translateZ(-10svmin)
+      rotateX(var(--rotation-start-x, 0deg))
       rotateY(var(--rotation-start-y, 0deg))
       rotateZ(var(--rotation-start-z, 0deg));
   }
   to {
-    transform: rotateX(calc(var(--rotation-start-x, 0deg) + 360deg))
+    transform: translateZ(-10svmin)
+      rotateX(calc(var(--rotation-start-x, 0deg) + 360deg))
       rotateY(calc(var(--rotation-start-y, 0deg) + 360deg))
       rotateZ(calc(var(--rotation-start-z, 0deg) + 360deg));
   }
@@ -46,54 +50,18 @@
   user-select: none;
 }
 
-/* Frame slices — Quad Box: translate property + rotation in transform (not rotate property) */
-.grid3d-fr-z0 { translate: 0 0 -30.15svmin; }
-.grid3d-fr-z1 { translate: 0 0 -10.05svmin; }
-.grid3d-fr-z2 { translate: 0 0 10.05svmin; }
-.grid3d-fr-z3 { translate: 0 0 30.15svmin; }
-.grid3d-fr-y0 { translate: 0 -30.15svmin 0; transform: rotateX(90deg); }
-.grid3d-fr-y1 { translate: 0 -10.05svmin 0; transform: rotateX(90deg); }
-.grid3d-fr-y2 { translate: 0 10.05svmin 0; transform: rotateX(90deg); }
-.grid3d-fr-y3 { translate: 0 30.15svmin 0; transform: rotateX(90deg); }
-.grid3d-fr-x0 { translate: -30.15svmin 0 0; transform: rotateY(90deg); }
-.grid3d-fr-x1 { translate: -10.05svmin 0 0; transform: rotateY(90deg); }
-.grid3d-fr-x2 { translate: 10.05svmin 0 0; transform: rotateY(90deg); }
-.grid3d-fr-x3 { translate: 30.15svmin 0 0; transform: rotateY(90deg); }
-
-@supports not (translate: 0 0 1px) {
-  .grid3d-scene {
-    translate: none;
-    animation: grid3d-spin-fallback linear infinite;
-  }
-
-  @keyframes grid3d-spin-fallback {
-    from {
-      transform: translateZ(-10svmin)
-        rotateX(var(--rotation-start-x, 0deg))
-        rotateY(var(--rotation-start-y, 0deg))
-        rotateZ(var(--rotation-start-z, 0deg));
-    }
-    to {
-      transform: translateZ(-10svmin)
-        rotateX(calc(var(--rotation-start-x, 0deg) + 360deg))
-        rotateY(calc(var(--rotation-start-y, 0deg) + 360deg))
-        rotateZ(calc(var(--rotation-start-z, 0deg) + 360deg));
-    }
-  }
-
-  .grid3d-fr-z0 { transform: translateZ(-30.15svmin); }
-  .grid3d-fr-z1 { transform: translateZ(-10.05svmin); }
-  .grid3d-fr-z2 { transform: translateZ(10.05svmin); }
-  .grid3d-fr-z3 { transform: translateZ(30.15svmin); }
-  .grid3d-fr-y0 { translate: none; transform: translateY(-30.15svmin) rotateX(90deg); }
-  .grid3d-fr-y1 { translate: none; transform: translateY(-10.05svmin) rotateX(90deg); }
-  .grid3d-fr-y2 { translate: none; transform: translateY(10.05svmin) rotateX(90deg); }
-  .grid3d-fr-y3 { translate: none; transform: translateY(30.15svmin) rotateX(90deg); }
-  .grid3d-fr-x0 { translate: none; transform: translateX(-30.15svmin) rotateY(90deg); }
-  .grid3d-fr-x1 { translate: none; transform: translateX(-10.05svmin) rotateY(90deg); }
-  .grid3d-fr-x2 { translate: none; transform: translateX(10.05svmin) rotateY(90deg); }
-  .grid3d-fr-x3 { translate: none; transform: translateX(30.15svmin) rotateY(90deg); }
-}
+.grid3d-fr-z0 { transform: translateZ(-30.15svmin); }
+.grid3d-fr-z1 { transform: translateZ(-10.05svmin); }
+.grid3d-fr-z2 { transform: translateZ(10.05svmin); }
+.grid3d-fr-z3 { transform: translateZ(30.15svmin); }
+.grid3d-fr-y0 { transform: translateY(-30.15svmin) rotateX(90deg); }
+.grid3d-fr-y1 { transform: translateY(-10.05svmin) rotateX(90deg); }
+.grid3d-fr-y2 { transform: translateY(10.05svmin) rotateX(90deg); }
+.grid3d-fr-y3 { transform: translateY(30.15svmin) rotateX(90deg); }
+.grid3d-fr-x0 { transform: translateX(-30.15svmin) rotateY(90deg); }
+.grid3d-fr-x1 { transform: translateX(-10.05svmin) rotateY(90deg); }
+.grid3d-fr-x2 { transform: translateX(10.05svmin) rotateY(90deg); }
+.grid3d-fr-x3 { transform: translateX(30.15svmin) rotateY(90deg); }
 
 .grid3d-cell {
   position: absolute;
@@ -111,21 +79,12 @@
   transform-style: flat;
 }
 
-.grid3d-face-front { translate: 0 0 10svmin; }
-.grid3d-face-back { translate: 0 0 -10svmin; transform: rotateY(180deg); }
-.grid3d-face-right { translate: 10svmin 0 0; transform: rotateY(-90deg); }
-.grid3d-face-left { translate: -10svmin 0 0; transform: rotateY(90deg); }
-.grid3d-face-top { translate: 0 10svmin 0; transform: rotateX(90deg); }
-.grid3d-face-bottom { translate: 0 -10svmin 0; transform: rotateX(-90deg); }
-
-@supports not (translate: 0 0 1px) {
-  .grid3d-face-front { transform: translateZ(10svmin); }
-  .grid3d-face-back { translate: none; transform: translateZ(-10svmin) rotateY(180deg); }
-  .grid3d-face-right { translate: none; transform: translateX(10svmin) rotateY(-90deg); }
-  .grid3d-face-left { translate: none; transform: translateX(-10svmin) rotateY(90deg); }
-  .grid3d-face-top { translate: none; transform: translateY(10svmin) rotateX(90deg); }
-  .grid3d-face-bottom { translate: none; transform: translateY(-10svmin) rotateX(-90deg); }
-}
+.grid3d-face-front { transform: translateZ(10svmin); }
+.grid3d-face-back { transform: translateZ(-10svmin) rotateY(180deg); }
+.grid3d-face-right { transform: translateX(10svmin) rotateY(-90deg); }
+.grid3d-face-left { transform: translateX(-10svmin) rotateY(90deg); }
+.grid3d-face-top { transform: translateY(10svmin) rotateX(90deg); }
+.grid3d-face-bottom { transform: translateY(-10svmin) rotateX(-90deg); }
 
 .grid3d-shape {
   position: absolute;
