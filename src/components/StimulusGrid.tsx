@@ -1,12 +1,17 @@
 import { CELL_PX, COLORS, GRID_PX } from '../lib/constants'
+import { GateCellContent } from './GateOverlay'
 import { ShapeIcon } from './ShapeIcon'
-import type { GameMode, InputGate, Stimulus } from '../types/game'
+import type { GameMode, InputGate, OutputGate, Stimulus } from '../types/game'
+
+const CENTER_CELL = 4
 
 interface StimulusGridProps {
   stimulus: Stimulus
   inputGate: InputGate
   idle?: boolean
   gameMode?: GameMode
+  outputGate?: OutputGate
+  showGate?: boolean
 }
 
 function shapeFillColor(
@@ -27,6 +32,8 @@ export function StimulusGrid({
   inputGate,
   idle = false,
   gameMode = 'quad',
+  outputGate = 'or',
+  showGate = false,
 }: StimulusGridProps) {
   const color = COLORS.find((c) => c.id === stimulus.color) ?? COLORS[0]
   const cells = Array.from({ length: 9 }, (_, i) => i)
@@ -61,11 +68,14 @@ export function StimulusGrid({
             className="relative border border-white/80 overflow-hidden"
             style={{ width: CELL_PX, height: CELL_PX }}
           >
+            {i === CENTER_CELL && (
+              <GateCellContent outputGate={outputGate} visible={showGate} />
+            )}
             {highlightPosition && (
-              <div className="absolute inset-0 bg-white" aria-hidden />
+              <div className="absolute inset-0 bg-white z-[1]" aria-hidden />
             )}
             {isActive && showColorDot && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[2]">
                 <div
                   className="rounded-full"
                   style={{
@@ -77,7 +87,7 @@ export function StimulusGrid({
               </div>
             )}
             {isActive && showShape && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[2]">
                 <ShapeIcon shapeId={stimulus.shape} color={shapeColor} size={shapeSize} />
                 {showColorShape && (
                   <div

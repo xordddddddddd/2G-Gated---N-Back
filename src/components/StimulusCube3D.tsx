@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { COLORS, GRID_PX } from '../lib/constants'
+import { GateCellContent } from './GateOverlay'
 import { ShapeIcon } from './ShapeIcon'
-import type { GameMode, InputGate, Stimulus } from '../types/game'
+import type { GameMode, InputGate, OutputGate, Stimulus } from '../types/game'
+
+const CENTER_CELL = 4
 
 interface StimulusCube3DProps {
   stimulus: Stimulus
@@ -9,6 +12,8 @@ interface StimulusCube3DProps {
   idle?: boolean
   rotationSpeed?: number
   gameMode?: GameMode
+  outputGate?: OutputGate
+  showGate?: boolean
 }
 
 const CUBE_SIZE = GRID_PX * 0.78
@@ -20,12 +25,18 @@ function GridFace({
   idle,
   transform,
   gameMode,
+  outputGate,
+  showGate,
+  isFrontFace,
 }: {
   stimulus: Stimulus
   inputGate: InputGate
   idle: boolean
   transform: string
   gameMode: GameMode
+  outputGate: OutputGate
+  showGate: boolean
+  isFrontFace: boolean
 }) {
   const color = COLORS.find((c) => c.id === stimulus.color) ?? COLORS[0]
   const cellSize = CUBE_SIZE / 3
@@ -59,14 +70,17 @@ function GridFace({
             className="relative border border-white/90"
             style={{ width: cellSize, height: cellSize }}
           >
-            {onWhite && <div className="absolute inset-0 bg-white" />}
+            {isFrontFace && i === CENTER_CELL && (
+              <GateCellContent outputGate={outputGate} visible={showGate} />
+            )}
+            {onWhite && <div className="absolute inset-0 bg-white z-[1]" />}
             {isActive && inputGate.shape && (
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center justify-center z-[2]">
                 <ShapeIcon shapeId={stimulus.shape} color={shapeColor} size={shapeSize} />
               </div>
             )}
             {isActive && inputGate.color && !inputGate.shape && (
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center justify-center z-[2]">
                 <div
                   className="rounded-full"
                   style={{
@@ -90,6 +104,8 @@ export function StimulusCube3D({
   idle = false,
   rotationSpeed = 35,
   gameMode = 'quad',
+  outputGate = 'or',
+  showGate = false,
 }: StimulusCube3DProps) {
   const cubeRef = useRef<HTMLDivElement>(null)
   const angleRef = useRef(28)
@@ -136,6 +152,9 @@ export function StimulusCube3D({
           inputGate={inputGate}
           idle={idle}
           gameMode={gameMode}
+          outputGate={outputGate}
+          showGate={showGate}
+          isFrontFace
           transform={`translateZ(${d}px)`}
         />
         <GridFace
@@ -143,6 +162,9 @@ export function StimulusCube3D({
           inputGate={inputGate}
           idle={idle}
           gameMode={gameMode}
+          outputGate={outputGate}
+          showGate={false}
+          isFrontFace={false}
           transform={`rotateY(180deg) translateZ(${d}px)`}
         />
         <GridFace
@@ -150,6 +172,9 @@ export function StimulusCube3D({
           inputGate={inputGate}
           idle={idle}
           gameMode={gameMode}
+          outputGate={outputGate}
+          showGate={false}
+          isFrontFace={false}
           transform={`rotateY(90deg) translateZ(${d}px)`}
         />
         <GridFace
@@ -157,6 +182,9 @@ export function StimulusCube3D({
           inputGate={inputGate}
           idle={idle}
           gameMode={gameMode}
+          outputGate={outputGate}
+          showGate={false}
+          isFrontFace={false}
           transform={`rotateY(-90deg) translateZ(${d}px)`}
         />
         <GridFace
@@ -164,6 +192,9 @@ export function StimulusCube3D({
           inputGate={inputGate}
           idle={idle}
           gameMode={gameMode}
+          outputGate={outputGate}
+          showGate={false}
+          isFrontFace={false}
           transform={`rotateX(90deg) translateZ(${d}px)`}
         />
         <GridFace
@@ -171,6 +202,9 @@ export function StimulusCube3D({
           inputGate={inputGate}
           idle={idle}
           gameMode={gameMode}
+          outputGate={outputGate}
+          showGate={false}
+          isFrontFace={false}
           transform={`rotateX(-90deg) translateZ(${d}px)`}
         />
       </div>

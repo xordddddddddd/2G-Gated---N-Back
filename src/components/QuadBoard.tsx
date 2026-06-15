@@ -1,7 +1,6 @@
 import { GRID_PX } from '../lib/constants'
 import { getKeyForStream } from '../lib/response'
 import { createIdleGate, createIdleStimulus } from '../lib/sequence'
-import { GateOverlay } from './GateOverlay'
 import { StimulusCube3D } from './StimulusCube3D'
 import { StimulusGrid } from './StimulusGrid'
 import { StreamKeyPanel } from './StreamKeyPanel'
@@ -52,6 +51,8 @@ export function QuadBoard({
         idle={idle}
         rotationSpeed={settings.rotationSpeed}
         gameMode={settings.gameMode}
+        outputGate={outputGate}
+        showGate={showGates}
       />
     ) : (
       <StimulusGrid
@@ -59,6 +60,8 @@ export function QuadBoard({
         inputGate={gate}
         idle={idle}
         gameMode={settings.gameMode}
+        outputGate={outputGate}
+        showGate={showGates}
       />
     )
 
@@ -87,7 +90,6 @@ export function QuadBoard({
 
       <div className="relative shrink-0">
         {stimulusDisplay}
-        <GateOverlay outputGate={outputGate} visible={showGates} />
       </div>
 
       <div
