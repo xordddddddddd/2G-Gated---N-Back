@@ -21,11 +21,10 @@ export function QuadLayout({
   phase,
   settings,
   currentTrial,
-  trialIndex,
+  playedIndex,
   totalTrials,
   trialsRemaining,
   nLevel,
-  isScorable,
   feedback,
   stats,
   suggestedN,
@@ -138,11 +137,6 @@ export function QuadLayout({
             </p>
           )}
 
-          {isPlaying && !isScorable && (
-            <p className="absolute bottom-20 text-xs text-white/30">
-              Warm-up {trialIndex + 1} / {nLevel}
-            </p>
-          )}
 
           {settings.showTrialCounter && (
             <div
@@ -156,7 +150,7 @@ export function QuadLayout({
 
         {isPlaying && (
           <footer className="px-4 py-1 text-center text-[10px] text-white/20 shrink-0">
-            Trial {trialIndex + 1} / {totalTrials}
+            Trial {playedIndex + 1} / {totalTrials}
           </footer>
         )}
       </div>
