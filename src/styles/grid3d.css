@@ -60,6 +60,7 @@
   position: absolute;
   inset: 0;
   backface-visibility: hidden;
+  transform-style: flat;
 }
 
 /* Cube faces — Quad Box Cell.svelte order */
