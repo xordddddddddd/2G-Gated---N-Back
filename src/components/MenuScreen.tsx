@@ -49,7 +49,7 @@ export function MenuScreen({
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/15 border border-accent/30 text-accent text-sm font-medium">
                   2G Gated N-Back
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Quad Training</h1>
+                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">2G Quad N-Back</h1>
                 <p className="text-muted text-sm leading-relaxed max-w-md mx-auto">
                   Stimuli appear on the grid. Press the matching stream key — Position (A), Color (F),
                   Shape (J), Audio (L).
