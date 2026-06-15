@@ -1,5 +1,5 @@
 import { CELL_PX, COLORS, GRID_PX } from '../lib/constants'
-import { GateCellContent } from './GateOverlay'
+import { GateCellContent, GateLabel } from './GateOverlay'
 import { ShapeIcon } from './ShapeIcon'
 import type { GameMode, InputGate, OutputGate, Stimulus } from '../types/game'
 
@@ -44,18 +44,25 @@ export function StimulusGrid({
   const shapeSize = Math.round(CELL_PX * 0.72)
 
   return (
-    <div
-      className="shrink-0 grid grid-cols-3 border border-white"
-      style={{
-        width: GRID_PX,
-        height: GRID_PX,
-        minWidth: GRID_PX,
-        minHeight: GRID_PX,
-        maxWidth: GRID_PX,
-        maxHeight: GRID_PX,
-        background: '#000',
-      }}
-    >
+    <div className="gate-2d-layout shrink-0">
+      {showGate && (
+        <div className="gate-2d-side gate-2d-side-left" aria-hidden>
+          <GateLabel outputGate={outputGate} size="side" />
+        </div>
+      )}
+
+      <div
+        className="shrink-0 grid grid-cols-3 border border-white"
+        style={{
+          width: GRID_PX,
+          height: GRID_PX,
+          minWidth: GRID_PX,
+          minHeight: GRID_PX,
+          maxWidth: GRID_PX,
+          maxHeight: GRID_PX,
+          background: '#000',
+        }}
+      >
       {cells.map((i) => {
         const isActive = !idle && i === activePosition
         const highlightPosition = isActive && inputGate.position
@@ -104,6 +111,13 @@ export function StimulusGrid({
           </div>
         )
       })}
+      </div>
+
+      {showGate && (
+        <div className="gate-2d-side gate-2d-side-right" aria-hidden>
+          <GateLabel outputGate={outputGate} size="side" />
+        </div>
+      )}
     </div>
   )
 }
