@@ -17,7 +17,6 @@ export function StreamKeyPanel({
   active,
   pressed,
   onPress,
-  layout,
   disabled = false,
 }: StreamKeyPanelProps) {
   const label = STREAM_LABELS[stream]
@@ -28,22 +27,24 @@ export function StreamKeyPanel({
       onClick={onPress}
       disabled={!active || disabled}
       className={[
-        'flex flex-col items-center justify-center gap-2 select-none transition-all duration-150',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50',
-        layout === 'left' || layout === 'right' ? 'w-[100px]' : 'h-[80px]',
-        active && !disabled ? 'opacity-100' : 'opacity-30 cursor-default',
-        pressed ? 'scale-95' : active && !disabled ? 'hover:scale-105' : '',
+        'flex flex-col items-center justify-center gap-3 select-none transition-opacity duration-150',
+        'focus:outline-none focus-visible:ring-1 focus-visible:ring-white/40',
+        'w-[90px]',
+        active && !disabled ? 'opacity-100' : 'opacity-25 cursor-default',
+        pressed ? 'opacity-100' : '',
       ].join(' ')}
       aria-label={`${label} match key ${keyLabel}`}
     >
-      <span className="text-xs font-medium text-white/70 uppercase tracking-[0.2em]">
+      <span className="text-[11px] font-normal text-white/50 uppercase tracking-[0.15em]">
         {label}
       </span>
       <span
         className={[
-          'font-serif text-6xl leading-none',
-          pressed ? 'text-white' : 'text-white/90',
+          'font-serif text-[5.5rem] leading-none',
+          active && !disabled ? 'text-white' : 'text-white/30',
+          pressed ? 'scale-95' : '',
         ].join(' ')}
+        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
       >
         {keyLabel}
       </span>

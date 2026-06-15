@@ -27,7 +27,8 @@ export const SHAPES = [
 ] as const
 
 export const GRID_SIZE = 3
-export const GRID_PX = 420
+export const GRID_PX = 560
+export const CELL_PX = GRID_PX / GRID_SIZE
 
 export const STREAM_LABELS: Record<Stream, string> = {
   position: 'Position',
@@ -101,6 +102,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   enableInputGating: true,
   enabledStreams: DEFAULT_ENABLED_STREAMS,
   showTrialCounter: true,
+  voiceUri: '',
 }
 
 export const INPUT_GATE_PATTERNS: InputGatePattern[] = [

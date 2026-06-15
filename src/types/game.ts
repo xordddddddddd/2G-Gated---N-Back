@@ -20,7 +20,7 @@ export type ColorMode = 'generative' | 'standard'
 
 export type ShapeMode = 'all' | 'basic'
 
-export type GridMode = '2d'
+export type GridMode = '2d' | '3d'
 
 export interface Stimulus {
   position: number
@@ -81,6 +81,7 @@ export interface GameSettings {
   enableInputGating: boolean
   enabledStreams: InputGate
   showTrialCounter: boolean
+  voiceUri: string
 }
 
 export interface TrialResult {

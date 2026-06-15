@@ -39,52 +39,55 @@ export function QuadLayout({
   resetSettings,
   handleStreamPress,
 }: QuadLayoutProps) {
-  const [settingsOpen, setSettingsOpen] = useState(true)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [statsOpen, setStatsOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
 
   const showIdle = phase === 'ready' || (phase === 'results' && !isPlaying)
   const trial = isPlaying ? currentTrial : null
 
+  const modeLabel =
+    settings.gameMode === 'quad' ? 'QUAD' : settings.gameMode === 'dual' ? 'DUAL' : '2G'
+
   return (
-    <div className="flex min-h-dvh bg-black text-white">
-      {settingsOpen ? (
+    <div className="flex min-h-dvh bg-[#1a1a1a] text-white">
+      {settingsOpen && (
         <SettingsSidebar
           settings={settings}
           onUpdate={updateSettings}
           onReset={resetSettings}
           onToggle={() => setSettingsOpen(false)}
         />
-      ) : (
-        <SettingsSidebar
-          settings={settings}
-          onUpdate={updateSettings}
-          onReset={resetSettings}
-          collapsed
-          onToggle={() => setSettingsOpen(true)}
-        />
       )}
 
       <div className="flex-1 flex flex-col min-w-0 relative">
-        <header className="flex items-center justify-between px-4 py-3 border-b border-white/10 shrink-0">
+        <header className="flex items-center justify-between px-6 py-4 shrink-0">
           <button
             type="button"
             onClick={() => setSettingsOpen((v) => !v)}
-            className="text-white/50 hover:text-white text-sm w-24 text-left"
+            className="text-white/40 hover:text-white w-8"
+            aria-label="Toggle settings"
           >
-            {settingsOpen ? '' : '⚙'}
+            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
+              <path d="M3 6h18v2H3V6zm0 5h12v2H3v-2zm0 5h18v2H3v-2z" />
+            </svg>
           </button>
-          <h1 className="text-sm font-mono tracking-[0.25em] uppercase text-center">
-            N ≤ {nLevel} {settings.gameMode === 'quad' ? 'QUAD' : settings.gameMode === 'dual' ? 'DUAL' : '2G'}
+
+          <h1
+            className="text-base tracking-[0.3em] uppercase text-center font-serif"
+            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+          >
+            N = {nLevel}&nbsp;&nbsp;{modeLabel}
           </h1>
-          <div className="flex items-center gap-3 w-48 justify-end text-sm">
-            <span className="text-white/70 tabular-nums hidden sm:inline">
+
+          <div className="flex items-center gap-4 text-sm">
+            <span className="text-white/60 tabular-nums hidden sm:inline text-xs tracking-wide">
               Today: {formatPlayTime(todayPlayMs)}
             </span>
             <button
               type="button"
               onClick={() => setHelpOpen((v) => !v)}
-              className="w-7 h-7 rounded-full border border-white/30 flex items-center justify-center hover:bg-white/10"
+              className="w-6 h-6 rounded-full border border-white/40 flex items-center justify-center text-xs hover:bg-white/10"
               aria-label="Help"
             >
               ?
@@ -92,10 +95,10 @@ export function QuadLayout({
             <button
               type="button"
               onClick={() => setStatsOpen(true)}
-              className="w-7 h-7 flex items-center justify-center hover:bg-white/10 rounded"
+              className="hover:opacity-80"
               aria-label="Statistics"
             >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current text-white/70">
                 <rect x="4" y="14" width="4" height="6" />
                 <rect x="10" y="8" width="4" height="12" />
                 <rect x="16" y="4" width="4" height="16" />
@@ -105,80 +108,54 @@ export function QuadLayout({
         </header>
 
         {helpOpen && (
-          <div className="px-4 py-2 text-xs text-white/60 border-b border-white/10 bg-white/5">
-            Press the key for each stream when it matches n-back: Position <b>A</b>, Color <b>F</b>, Shape{' '}
-            <b>J</b>, Audio <b>L</b>. Click Play to start.
+          <div className="px-6 py-2 text-xs text-white/50 border-b border-white/10 text-center">
+            Press <b>A</b> Position · <b>F</b> Color · <b>J</b> Shape · <b>L</b> Audio when they match n-back.
             <button type="button" onClick={() => setHelpOpen(false)} className="ml-3 underline">
               dismiss
             </button>
           </div>
         )}
 
-        <main className="flex-1 flex items-stretch min-h-0">
-          <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
-            <QuadBoardFromTrial
-              trial={trial}
-              settings={settings}
-              pressedStreams={pressedStreams}
-              onStreamPress={handleStreamPress}
-              idle={showIdle}
-              interactive={isPlaying}
-            />
+        <main className="flex-1 flex items-center justify-center p-6 relative min-h-0">
+          <QuadBoardFromTrial
+            trial={trial}
+            settings={settings}
+            pressedStreams={pressedStreams}
+            onStreamPress={handleStreamPress}
+            idle={showIdle}
+            interactive={isPlaying}
+            isPlaying={isPlaying}
+            onPlay={startSession}
+            onStop={stopSession}
+          />
 
-            {feedback && settings.feedbackMode === 'show' && (
-              <p className={`mt-4 text-sm font-medium ${FEEDBACK_STYLES[feedback]}`}>
-                {feedback === 'hit' && 'Correct!'}
-                {feedback === 'miss' && 'Missed a match'}
-                {feedback === 'false-alarm' && 'False alarm'}
-                {feedback === 'correct-reject' && 'Correct reject'}
-              </p>
-            )}
+          {feedback && settings.feedbackMode === 'show' && (
+            <p className={`absolute bottom-20 text-sm font-medium ${FEEDBACK_STYLES[feedback]}`}>
+              {feedback === 'hit' && 'Correct!'}
+              {feedback === 'miss' && 'Missed a match'}
+              {feedback === 'false-alarm' && 'False alarm'}
+              {feedback === 'correct-reject' && 'Correct reject'}
+            </p>
+          )}
 
-            {isPlaying && !isScorable && (
-              <p className="mt-2 text-xs text-white/40">
-                Warm-up {trialIndex + 1} / {nLevel}
-              </p>
-            )}
+          {isPlaying && !isScorable && (
+            <p className="absolute bottom-20 text-xs text-white/30">
+              Warm-up {trialIndex + 1} / {nLevel}
+            </p>
+          )}
 
-            {settings.showTrialCounter && isPlaying && (
-              <div
-                className="absolute bottom-6 right-6 text-7xl font-bold text-white/15 tabular-nums pointer-events-none select-none font-serif"
-                aria-label={`${trialsRemaining} trials remaining`}
-              >
-                {trialsRemaining}
-              </div>
-            )}
-          </div>
-
-          <aside className="w-[140px] shrink-0 flex flex-col items-center pt-6 pr-4 gap-6 border-l border-white/5">
-            {isPlaying ? (
-              <button
-                type="button"
-                onClick={stopSession}
-                className="w-full py-4 px-2 font-serif text-2xl border border-white/30 rounded hover:bg-white/10 transition-colors"
-              >
-                Stop
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={startSession}
-                className="w-full py-4 px-2 font-serif text-3xl border border-white/40 rounded bg-white/5 hover:bg-white/15 transition-colors"
-              >
-                Play
-              </button>
-            )}
-
-            {!isPlaying && settings.showTrialCounter && (
-              <div className="text-7xl font-serif text-white/15 tabular-nums mt-auto mb-8">
-                {settings.trialCount}
-              </div>
-            )}
-          </aside>
+          {settings.showTrialCounter && (
+            <div
+              className="absolute bottom-8 right-10 text-[7rem] font-serif text-white/12 tabular-nums pointer-events-none select-none leading-none"
+              aria-label={isPlaying ? `${trialsRemaining} trials remaining` : `${settings.trialCount} trials`}
+            >
+              {isPlaying ? trialsRemaining : settings.trialCount}
+            </div>
+          )}
         </main>
 
         {isPlaying && (
-          <footer className="px-4 py-1.5 text-center text-[10px] text-white/30 border-t border-white/5 shrink-0">
+          <footer className="px-4 py-1 text-center text-[10px] text-white/20 shrink-0">
             Trial {trialIndex + 1} / {totalTrials}
           </footer>
         )}
@@ -191,7 +168,7 @@ export function QuadLayout({
             <div className="grid grid-cols-2 gap-3 text-center text-sm">
               <div className="p-3 rounded bg-white/5">
                 <p className="text-white/50 text-xs">Total</p>
-                <p className="text-2xl font-bold" style={{ color: stats.streamScores.position >= 50 ? '#22c55e' : '#ef4444' }}>
+                <p className="text-2xl font-bold">
                   {Math.round(
                     (stats.streamScores.position +
                       stats.streamScores.letter +
