@@ -3,10 +3,10 @@ import { COLORS } from '../lib/constants'
 import {
   getRotationStart,
   indexToPositionKey,
-  positionKeyToTransform,
   rotationDurationSec,
   toDisplayPosition,
 } from '../lib/grid3d'
+import { FRAME_LAYERS, layerToStyle, positionKeyToStyle } from '../lib/grid3dLayers'
 import { GateCellContent } from './GateOverlay'
 import { GridCell3D } from './GridCell3D'
 import { GridFrame } from './GridFrame'
@@ -51,21 +51,6 @@ function getCubeAppearance(
   return { faceColor: '#fdfdfd', shapeColor: '#1a1a1a' }
 }
 
-const FRAME_LAYERS: { transform: string }[] = [
-  { transform: 'translateZ(-30.15svmin)' },
-  { transform: 'translateZ(-10.05svmin)' },
-  { transform: 'translateZ(10.05svmin)' },
-  { transform: 'translateZ(30.15svmin)' },
-  { transform: 'translateY(-30.15svmin) rotateX(90deg)' },
-  { transform: 'translateY(-10.05svmin) rotateX(90deg)' },
-  { transform: 'translateY(10.05svmin) rotateX(90deg)' },
-  { transform: 'translateY(30.15svmin) rotateX(90deg)' },
-  { transform: 'translateX(-30.15svmin) rotateY(90deg)' },
-  { transform: 'translateX(-10.05svmin) rotateY(90deg)' },
-  { transform: 'translateX(10.05svmin) rotateY(90deg)' },
-  { transform: 'translateX(30.15svmin) rotateY(90deg)' },
-]
-
 export function StimulusCube3D({
   stimulus,
   inputGate,
@@ -88,41 +73,36 @@ export function StimulusCube3D({
 
   return (
     <div className="grid3d-viewport">
-      <div className="grid3d-scene-offset">
-        <div
-          className="grid3d-scene-rotate"
-          style={
-            {
-              animationDuration: `${durationSec}s`,
-              '--rotation-start-x': `${rotationStart.x}deg`,
-              '--rotation-start-y': `${rotationStart.y}deg`,
-              '--rotation-start-z': `${rotationStart.z}deg`,
-            } as React.CSSProperties
-          }
-        >
-          {showCell && (
-            <GridCell3D
-              positionKey={positionKey}
-              faceColor={appearance.faceColor}
-              flash={flash}
-              shapeId={appearance.shapeId}
-              shapeColor={appearance.shapeColor}
-            />
-          )}
+      <div
+        className="grid3d-scene"
+        style={
+          {
+            animationDuration: `${durationSec}s`,
+            '--rotation-start-x': `${rotationStart.x}deg`,
+            '--rotation-start-y': `${rotationStart.y}deg`,
+            '--rotation-start-z': `${rotationStart.z}deg`,
+          } as React.CSSProperties
+        }
+      >
+        {showCell && (
+          <GridCell3D
+            positionKey={positionKey}
+            faceColor={appearance.faceColor}
+            flash={flash}
+            shapeId={appearance.shapeId}
+            shapeColor={appearance.shapeColor}
+          />
+        )}
 
-          {showGate && (
-            <div
-              className="grid3d-gate"
-              style={{ transform: positionKeyToTransform('1-1-1') }}
-            >
-              <GateCellContent outputGate={outputGate} visible={showGate} />
-            </div>
-          )}
+        {showGate && (
+          <div className="grid3d-gate" style={positionKeyToStyle('1-1-1')}>
+            <GateCellContent outputGate={outputGate} visible={showGate} />
+          </div>
+        )}
 
-          {FRAME_LAYERS.map((layer, i) => (
-            <GridFrame key={i} transform={layer.transform} />
-          ))}
-        </div>
+        {FRAME_LAYERS.map((layer, i) => (
+          <GridFrame key={i} style={layerToStyle(layer)} />
+        ))}
       </div>
     </div>
   )

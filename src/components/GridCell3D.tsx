@@ -1,4 +1,4 @@
-import { positionKeyToTransform } from '../lib/grid3d'
+import { positionKeyToStyle } from '../lib/grid3dLayers'
 import { ShapeIcon } from './ShapeIcon'
 
 interface GridCell3DProps {
@@ -22,7 +22,7 @@ export function GridCell3D({
   return (
     <div
       className={`grid3d-cell${flash ? ' grid3d-flash' : ''}`}
-      style={{ transform: positionKeyToTransform(positionKey) }}
+      style={positionKeyToStyle(positionKey)}
     >
       <div className="grid3d-face grid3d-face-front" style={faceStyle}>
         {showShape && (

@@ -1,30 +1,24 @@
-/* 3D grid — matches Quad Box (soamsy/quad-box) rotate3D layout */
+/* 3D grid — matches Quad Box rotate3D (CSS translate/rotate properties) */
 
 .grid3d-viewport {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 60.3svmin;
+  height: 100%;
   min-width: 60.3svmin;
   min-height: 60.3svmin;
   perspective: 60svmin;
-  perspective-origin: 50% 50%;
   overflow: hidden;
 }
 
-.grid3d-scene-offset {
+.grid3d-scene {
+  position: absolute;
   width: 60.3svmin;
   height: 60.3svmin;
   transform-style: preserve-3d;
-  transform: translateZ(-10svmin);
-}
-
-.grid3d-scene-rotate {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
+  translate: 0 0 -10svmin;
   animation: grid3d-spin linear infinite;
   will-change: transform;
 }
@@ -47,15 +41,12 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  display: block;
-  object-fit: fill;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
   pointer-events: none;
   user-select: none;
 }
 
-/* Stimulus mini-cube */
 .grid3d-cell {
   position: absolute;
   width: 20.1svmin;
@@ -71,29 +62,34 @@
   backface-visibility: hidden;
 }
 
-/* Face transforms — same order as Quad Box Cell.svelte */
+/* Cube faces — Quad Box Cell.svelte order */
 .grid3d-face-front {
-  transform: translateZ(10svmin);
+  translate: 0 0 10svmin;
 }
 
 .grid3d-face-back {
-  transform: translateZ(-10svmin) rotateY(180deg);
+  translate: 0 0 -10svmin;
+  rotate: y 180deg;
 }
 
 .grid3d-face-right {
-  transform: translateX(10svmin) rotateY(-90deg);
+  translate: 10svmin 0 0;
+  rotate: y -90deg;
 }
 
 .grid3d-face-left {
-  transform: translateX(-10svmin) rotateY(90deg);
+  translate: -10svmin 0 0;
+  rotate: y 90deg;
 }
 
 .grid3d-face-top {
-  transform: translateY(10svmin) rotateX(90deg);
+  translate: 0 10svmin 0;
+  rotate: x 90deg;
 }
 
 .grid3d-face-bottom {
-  transform: translateY(-10svmin) rotateX(-90deg);
+  translate: 0 -10svmin 0;
+  rotate: x -90deg;
 }
 
 .grid3d-shape {
@@ -125,9 +121,8 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  z-index: 2;
 }
 
 .grid3d-gate > * {
-  transform: translateZ(11svmin);
+  translate: 0 0 11svmin;
 }
