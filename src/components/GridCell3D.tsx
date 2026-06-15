@@ -1,3 +1,4 @@
+import { positionKeyToTransform } from '../lib/grid3d'
 import { ShapeIcon } from './ShapeIcon'
 
 interface GridCell3DProps {
@@ -6,7 +7,6 @@ interface GridCell3DProps {
   flash?: boolean
   shapeId?: string
   shapeColor?: string
-  shapeSize?: number
 }
 
 export function GridCell3D({
@@ -15,17 +15,19 @@ export function GridCell3D({
   flash = false,
   shapeId,
   shapeColor = '#1a1a1a',
-  shapeSize = 48,
 }: GridCell3DProps) {
   const showShape = Boolean(shapeId)
   const faceStyle = { backgroundColor: faceColor }
 
   return (
-    <div className={`grid3d-cell p${positionKey}${flash ? ' grid3d-flash' : ''}`}>
+    <div
+      className={`grid3d-cell${flash ? ' grid3d-flash' : ''}`}
+      style={{ transform: positionKeyToTransform(positionKey) }}
+    >
       <div className="grid3d-face grid3d-face-front" style={faceStyle}>
         {showShape && (
           <div className="grid3d-shape">
-            <ShapeIcon shapeId={shapeId!} color={shapeColor} size={shapeSize} />
+            <ShapeIcon shapeId={shapeId!} color={shapeColor} size={64} />
           </div>
         )}
       </div>
