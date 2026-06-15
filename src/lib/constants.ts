@@ -84,7 +84,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   intervalMs: 3000,
   matchProbability: 0.25,
   interference: 0.2,
-  gridMode: '2d',
+  gridMode: '3d',
   audioMode: '5-syllables',
   colorMode: 'generative',
   shapeMode: 'all',

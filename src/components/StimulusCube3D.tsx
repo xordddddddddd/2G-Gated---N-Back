@@ -1,10 +1,14 @@
 import { useEffect, useRef } from 'react'
 import { COLORS, GRID_PX } from '../lib/constants'
+import { GRID_3D_CENTER, GRID_3D_CELL_COUNT, indexTo3D, toDisplayPosition } from '../lib/grid3d'
 import { GateCellContent } from './GateOverlay'
 import { ShapeIcon } from './ShapeIcon'
-import type { GameMode, InputGate, OutputGate, Stimulus } from '../types/game'
+import type { GameMode, GridMode, InputGate, OutputGate, Stimulus } from '../types/game'
 
-const CENTER_CELL = 4
+const LATTICE_SIZE = GRID_PX * 0.72
+const CELL_SIZE = LATTICE_SIZE / 3
+const TILT_X = -20
+const INITIAL_Y = 32
 
 interface StimulusCube3DProps {
   stimulus: Stimulus
@@ -14,86 +18,142 @@ interface StimulusCube3DProps {
   gameMode?: GameMode
   outputGate?: OutputGate
   showGate?: boolean
+  gridMode?: GridMode
 }
 
-const CUBE_SIZE = GRID_PX * 0.78
-const HALF = CUBE_SIZE / 2
+function shapeFillColor(
+  gameMode: GameMode,
+  inputGate: InputGate,
+  colorHex: string,
+  onWhiteCell: boolean,
+): string {
+  if (gameMode === 'quad') {
+    return onWhiteCell ? '#1a1a1a' : '#ffffff'
+  }
+  if (inputGate.color) return colorHex
+  return '#ffffff'
+}
 
-function GridFace({
-  stimulus,
-  inputGate,
+const FACE_TRANSFORMS = (half: number) => [
+  `translateZ(${half}px)`,
+  `rotateY(180deg) translateZ(${half}px)`,
+  `rotateY(90deg) translateZ(${half}px)`,
+  `rotateY(-90deg) translateZ(${half}px)`,
+  `rotateX(90deg) translateZ(${half}px)`,
+  `rotateX(-90deg) translateZ(${half}px)`,
+]
+
+function WireframeCell({
+  index,
+  active,
+  highlightPosition,
   idle,
-  transform,
+  inputGate,
   gameMode,
-  outputGate,
+  stimulus,
   showGate,
-  isFrontFace,
+  outputGate,
 }: {
-  stimulus: Stimulus
-  inputGate: InputGate
+  index: number
+  active: boolean
+  highlightPosition: boolean
   idle: boolean
-  transform: string
+  inputGate: InputGate
   gameMode: GameMode
-  outputGate: OutputGate
+  stimulus: Stimulus
   showGate: boolean
-  isFrontFace: boolean
+  outputGate: OutputGate
 }) {
   const color = COLORS.find((c) => c.id === stimulus.color) ?? COLORS[0]
-  const cellSize = CUBE_SIZE / 3
-  const shapeSize = Math.round(cellSize * 0.68)
-  const cells = Array.from({ length: 9 }, (_, i) => i)
+  const { x, y, z } = indexTo3D(index)
+  const tx = (x - 1) * CELL_SIZE
+  const ty = (y - 1) * CELL_SIZE
+  const tz = (z - 1) * CELL_SIZE
+  const half = CELL_SIZE / 2
+  const shapeSize = Math.round(CELL_SIZE * 0.55)
+  const onWhiteCell = Boolean(highlightPosition)
+  const shapeColor = shapeFillColor(gameMode, inputGate, color.hex, onWhiteCell)
+  const showShape = active && inputGate.shape
+  const showColorDot = active && inputGate.color && !inputGate.shape
+  const showColorShape = active && inputGate.color && inputGate.shape
+  const fill = highlightPosition ? '#ffffff' : 'transparent'
 
   return (
     <div
-      className="absolute grid grid-cols-3 bg-black"
+      className="absolute pointer-events-none"
       style={{
-        width: CUBE_SIZE,
-        height: CUBE_SIZE,
-        transform,
-        backfaceVisibility: 'hidden',
+        width: CELL_SIZE,
+        height: CELL_SIZE,
+        left: '50%',
+        top: '50%',
+        marginLeft: -CELL_SIZE / 2,
+        marginTop: -CELL_SIZE / 2,
+        transformStyle: 'preserve-3d',
+        transform: `translate3d(${tx}px, ${ty}px, ${tz}px)`,
       }}
     >
-      {cells.map((i) => {
-        const isActive = !idle && i === stimulus.position
-        const onWhite = isActive && inputGate.position
-        const shapeColor =
-          gameMode === 'quad'
-            ? onWhite
-              ? '#1a1a1a'
-              : '#ffffff'
-            : inputGate.color
-              ? color.hex
-              : '#ffffff'
-        return (
+      <div
+        className="absolute inset-0"
+        style={{ transformStyle: 'preserve-3d', width: CELL_SIZE, height: CELL_SIZE }}
+      >
+        {FACE_TRANSFORMS(half).map((transform, faceIndex) => (
           <div
-            key={i}
-            className="relative border border-white/90"
-            style={{ width: cellSize, height: cellSize }}
+            key={faceIndex}
+            className="absolute box-border border border-white/80"
+            style={{
+              width: CELL_SIZE,
+              height: CELL_SIZE,
+              left: 0,
+              top: 0,
+              transform,
+              backfaceVisibility: 'hidden',
+              background: faceIndex === 0 ? fill : 'transparent',
+            }}
+          />
+        ))}
+
+        {index === GRID_3D_CENTER && (
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{ transform: `translateZ(${half}px)`, backfaceVisibility: 'hidden' }}
           >
-            {isFrontFace && i === CENTER_CELL && (
-              <GateCellContent outputGate={outputGate} visible={showGate} />
+            <GateCellContent outputGate={outputGate} visible={showGate} />
+          </div>
+        )}
+
+        {!idle && active && (
+          <div
+            className="absolute inset-0 flex items-center justify-center z-[2]"
+            style={{ transform: `translateZ(${half + 1}px)`, backfaceVisibility: 'hidden' }}
+          >
+            {showColorDot && (
+              <div
+                className="rounded-full"
+                style={{
+                  width: shapeSize * 0.5,
+                  height: shapeSize * 0.5,
+                  backgroundColor: color.hex,
+                }}
+              />
             )}
-            {onWhite && <div className="absolute inset-0 bg-white z-[1]" />}
-            {isActive && inputGate.shape && (
-              <div className="absolute inset-0 flex items-center justify-center z-[2]">
+            {showShape && (
+              <div className="relative flex items-center justify-center">
                 <ShapeIcon shapeId={stimulus.shape} color={shapeColor} size={shapeSize} />
-              </div>
-            )}
-            {isActive && inputGate.color && !inputGate.shape && (
-              <div className="absolute inset-0 flex items-center justify-center z-[2]">
-                <div
-                  className="rounded-full"
-                  style={{
-                    width: shapeSize * 0.5,
-                    height: shapeSize * 0.5,
-                    backgroundColor: color.hex,
-                  }}
-                />
+                {showColorShape && (
+                  <div
+                    className="absolute rounded-full"
+                    style={{
+                      width: shapeSize * 0.32,
+                      height: shapeSize * 0.32,
+                      backgroundColor: color.hex,
+                    }}
+                  />
+                )}
               </div>
             )}
           </div>
-        )
-      })}
+        )}
+      </div>
     </div>
   )
 }
@@ -106,9 +166,11 @@ export function StimulusCube3D({
   gameMode = 'quad',
   outputGate = 'or',
   showGate = false,
+  gridMode = '3d',
 }: StimulusCube3DProps) {
   const cubeRef = useRef<HTMLDivElement>(null)
-  const angleRef = useRef(28)
+  const angleRef = useRef(INITIAL_Y)
+  const displayPosition = toDisplayPosition(stimulus.position, gridMode)
 
   useEffect(() => {
     let frame = 0
@@ -116,7 +178,7 @@ export function StimulusCube3D({
     const tick = () => {
       angleRef.current = (angleRef.current + speed) % 360
       if (cubeRef.current) {
-        cubeRef.current.style.transform = `rotateX(-22deg) rotateY(${angleRef.current}deg)`
+        cubeRef.current.style.transform = `rotateX(${TILT_X}deg) rotateY(${angleRef.current}deg)`
       }
       frame = requestAnimationFrame(tick)
     }
@@ -124,7 +186,7 @@ export function StimulusCube3D({
     return () => cancelAnimationFrame(frame)
   }, [rotationSpeed])
 
-  const d = HALF
+  const cells = Array.from({ length: GRID_3D_CELL_COUNT }, (_, index) => index)
 
   return (
     <div
@@ -134,79 +196,38 @@ export function StimulusCube3D({
         height: GRID_PX,
         minWidth: GRID_PX,
         minHeight: GRID_PX,
-        perspective: '1000px',
+        perspective: '1100px',
+        perspectiveOrigin: '50% 45%',
       }}
     >
       <div
         ref={cubeRef}
         className="relative"
         style={{
-          width: CUBE_SIZE,
-          height: CUBE_SIZE,
+          width: LATTICE_SIZE,
+          height: LATTICE_SIZE,
           transformStyle: 'preserve-3d',
-          transform: 'rotateX(-22deg) rotateY(28deg)',
+          transform: `rotateX(${TILT_X}deg) rotateY(${INITIAL_Y}deg)`,
         }}
       >
-        <GridFace
-          stimulus={stimulus}
-          inputGate={inputGate}
-          idle={idle}
-          gameMode={gameMode}
-          outputGate={outputGate}
-          showGate={showGate}
-          isFrontFace
-          transform={`translateZ(${d}px)`}
-        />
-        <GridFace
-          stimulus={stimulus}
-          inputGate={inputGate}
-          idle={idle}
-          gameMode={gameMode}
-          outputGate={outputGate}
-          showGate={false}
-          isFrontFace={false}
-          transform={`rotateY(180deg) translateZ(${d}px)`}
-        />
-        <GridFace
-          stimulus={stimulus}
-          inputGate={inputGate}
-          idle={idle}
-          gameMode={gameMode}
-          outputGate={outputGate}
-          showGate={false}
-          isFrontFace={false}
-          transform={`rotateY(90deg) translateZ(${d}px)`}
-        />
-        <GridFace
-          stimulus={stimulus}
-          inputGate={inputGate}
-          idle={idle}
-          gameMode={gameMode}
-          outputGate={outputGate}
-          showGate={false}
-          isFrontFace={false}
-          transform={`rotateY(-90deg) translateZ(${d}px)`}
-        />
-        <GridFace
-          stimulus={stimulus}
-          inputGate={inputGate}
-          idle={idle}
-          gameMode={gameMode}
-          outputGate={outputGate}
-          showGate={false}
-          isFrontFace={false}
-          transform={`rotateX(90deg) translateZ(${d}px)`}
-        />
-        <GridFace
-          stimulus={stimulus}
-          inputGate={inputGate}
-          idle={idle}
-          gameMode={gameMode}
-          outputGate={outputGate}
-          showGate={false}
-          isFrontFace={false}
-          transform={`rotateX(-90deg) translateZ(${d}px)`}
-        />
+        {cells.map((index) => {
+          const isActive = !idle && index === displayPosition
+          const highlightPosition = isActive && inputGate.position
+          return (
+            <WireframeCell
+              key={index}
+              index={index}
+              active={isActive}
+              highlightPosition={highlightPosition}
+              idle={idle}
+              inputGate={inputGate}
+              gameMode={gameMode}
+              stimulus={stimulus}
+              showGate={showGate}
+              outputGate={outputGate}
+            />
+          )
+        })}
       </div>
     </div>
   )

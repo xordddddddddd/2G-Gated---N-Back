@@ -1,4 +1,5 @@
 import { COLORS, INPUT_GATE_PATTERNS, getLettersForMode, getShapesForMode } from './constants'
+import { randomPosition3D } from './grid3d'
 import { pickOutputGate } from './response'
 import type { GameSettings, InputGate, OutputGate, Stimulus, Trial } from '../types/game'
 
@@ -6,15 +7,18 @@ function randomItem<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)]
 }
 
-function randomPosition(): number {
-  return Math.floor(Math.random() * 9)
+function randomPosition(gridMode: GameSettings['gridMode']): number {
+  return gridMode === '3d' ? randomPosition3D() : Math.floor(Math.random() * 9)
 }
 
-function createStimulus(settings: Pick<GameSettings, 'audioMode' | 'shapeMode'>, overrides: Partial<Stimulus> = {}): Stimulus {
+function createStimulus(
+  settings: Pick<GameSettings, 'audioMode' | 'shapeMode' | 'gridMode'>,
+  overrides: Partial<Stimulus> = {},
+): Stimulus {
   const letters = getLettersForMode(settings.audioMode)
   const shapes = getShapesForMode(settings.shapeMode)
   return {
-    position: randomPosition(),
+    position: randomPosition(settings.gridMode),
     letter: randomItem(letters),
     color: randomItem(COLORS).id,
     shape: randomItem(shapes).id,
@@ -79,7 +83,7 @@ function generateMatchTrial(
   past: Stimulus,
   gate: InputGate,
   outputGate: OutputGate,
-  settings: Pick<GameSettings, 'audioMode' | 'shapeMode'>,
+  settings: Pick<GameSettings, 'audioMode' | 'shapeMode' | 'gridMode'>,
 ): Stimulus {
   const base = createStimulus(settings)
   const activeStreams = (['position', 'letter', 'color', 'shape'] as const).filter((s) => gate[s])
@@ -106,7 +110,7 @@ function generateMatchTrial(
         if (stream === matchStream) continue
         if (stream === 'position') {
           let value = result.position
-          while (value === past.position) value = randomPosition()
+          while (value === past.position) value = randomPosition(settings.gridMode)
           result.position = value
         } else if (stream === 'letter') {
           let value = result.letter
@@ -131,7 +135,7 @@ function generateNonMatchTrial(
   past: Stimulus,
   gate: InputGate,
   outputGate: OutputGate,
-  settings: Pick<GameSettings, 'audioMode' | 'shapeMode'>,
+  settings: Pick<GameSettings, 'audioMode' | 'shapeMode' | 'gridMode'>,
 ): Stimulus {
   let stimulus = createStimulus(settings)
   let attempts = 0
@@ -146,7 +150,7 @@ function generateNonMatchTrial(
 
     for (const stream of activeStreams) {
       if (stimulus[stream] === past[stream]) {
-        if (stream === 'position') stimulus = { ...stimulus, position: randomPosition() }
+        if (stream === 'position') stimulus = { ...stimulus, position: randomPosition(settings.gridMode) }
         else if (stream === 'letter') stimulus = { ...stimulus, letter: randomItem(letters) }
         else if (stream === 'color') stimulus = { ...stimulus, color: randomItem(COLORS).id }
         else stimulus = { ...stimulus, shape: randomItem(shapes).id }
