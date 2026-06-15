@@ -4,6 +4,7 @@ interface GridCell3DProps {
   positionKey: string
   faceColor: string
   flash?: boolean
+  correctFlash?: boolean
   shapeId?: string
   shapeColor?: string
 }
@@ -12,6 +13,7 @@ export function GridCell3D({
   positionKey,
   faceColor,
   flash = false,
+  correctFlash = false,
   shapeId,
   shapeColor = '#1a1a1a',
 }: GridCell3DProps) {
@@ -19,7 +21,9 @@ export function GridCell3D({
   const faceStyle = { backgroundColor: faceColor }
 
   return (
-    <div className={`grid3d-cell p${positionKey}${flash ? ' grid3d-flash' : ''}`}>
+    <div
+      className={`grid3d-cell p${positionKey}${flash ? ' grid3d-flash-wrong' : ''}${correctFlash ? ' grid3d-flash-correct' : ''}`}
+    >
       <div className="grid3d-face grid3d-face-front" style={faceStyle}>
         {showShape && (
           <div className="grid3d-shape">

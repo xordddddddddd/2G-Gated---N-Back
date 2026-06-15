@@ -36,6 +36,7 @@ export function QuadLayout({
   isPlaying,
   pressedStreams: _pressedStreams,
   wrongStreams,
+  correctStreams,
   handlePlay,
   stopSession,
   dismissResults,
@@ -175,6 +176,11 @@ export function QuadLayout({
                 wrongStreams.has('color') ||
                 wrongStreams.has('shape')
               }
+              correctFlash={
+                correctStreams.has('position') ||
+                correctStreams.has('color') ||
+                correctStreams.has('shape')
+              }
             />
           )}
 
@@ -194,6 +200,7 @@ export function QuadLayout({
                 stream="color"
                 keyLabel={getKeyForStream('color', keys)}
                 active={gate.color}
+                correct={correctStreams.has('color')}
                 wrong={wrongStreams.has('color')}
                 onPress={() => handleStreamPress('color')}
                 disabled={!interactive}
@@ -202,6 +209,7 @@ export function QuadLayout({
                 stream="position"
                 keyLabel={getKeyForStream('position', keys)}
                 active={gate.position}
+                correct={correctStreams.has('position')}
                 wrong={wrongStreams.has('position')}
                 onPress={() => handleStreamPress('position')}
                 disabled={!interactive}
@@ -213,6 +221,7 @@ export function QuadLayout({
                 stream="shape"
                 keyLabel={getKeyForStream('shape', keys)}
                 active={gate.shape}
+                correct={correctStreams.has('shape')}
                 wrong={wrongStreams.has('shape')}
                 onPress={() => handleStreamPress('shape')}
                 disabled={!interactive}
@@ -221,6 +230,7 @@ export function QuadLayout({
                 stream="letter"
                 keyLabel={getKeyForStream('letter', keys)}
                 active={gate.letter}
+                correct={correctStreams.has('letter')}
                 wrong={wrongStreams.has('letter')}
                 onPress={() => handleStreamPress('letter')}
                 disabled={!interactive}
