@@ -6,9 +6,21 @@ export type OutputGateMode = 'random' | OutputGate
 
 export type ResponseMode = 'per-stream' | 'gated'
 
-export type GamePhase = 'menu' | 'tutorial' | 'playing' | 'paused' | 'results'
+export type GameMode = 'quad' | 'dual' | '2g'
+
+export type GamePhase = 'ready' | 'playing' | 'paused' | 'results'
 
 export type TrialFeedback = 'hit' | 'miss' | 'false-alarm' | 'correct-reject' | null
+
+export type FeedbackMode = 'show' | 'hide'
+
+export type AudioMode = '5-syllables' | '8-syllables'
+
+export type ColorMode = 'generative' | 'standard'
+
+export type ShapeMode = 'all' | 'basic'
+
+export type GridMode = '2d'
 
 export interface Stimulus {
   position: number
@@ -37,10 +49,29 @@ export interface StreamKeys {
   letter: string
 }
 
+export interface StreamScores {
+  position: number
+  letter: number
+  color: number
+  shape: number
+}
+
 export interface GameSettings {
+  gameMode: GameMode
   nLevel: number
   trialCount: number
   intervalMs: number
+  matchProbability: number
+  interference: number
+  gridMode: GridMode
+  audioMode: AudioMode
+  colorMode: ColorMode
+  shapeMode: ShapeMode
+  feedbackMode: FeedbackMode
+  rotationSpeed: number
+  autoProgression: boolean
+  autoProgressionThreshold: number
+  winAfter: number
   soundEnabled: boolean
   adaptive: boolean
   feedbackSounds: boolean
@@ -50,9 +81,6 @@ export interface GameSettings {
   enableInputGating: boolean
   enabledStreams: InputGate
   showTrialCounter: boolean
-  showOutputGate: boolean
-  showWarmupHint: boolean
-  matchProbability: number
 }
 
 export interface TrialResult {
@@ -64,6 +92,7 @@ export interface TrialResult {
   outputGate: OutputGate
   activeStreams: Stream[]
   pressedStreams: Stream[]
+  streamCorrect: Partial<Record<Stream, boolean>>
 }
 
 export interface SessionStats {
@@ -73,4 +102,21 @@ export interface SessionStats {
   correctRejects: number
   accuracy: number
   dPrime: number
+  streamScores: StreamScores
+}
+
+export interface GameSession {
+  id: string
+  date: string
+  gameLabel: string
+  nLevel: number
+  totalScore: number
+  streamScores: StreamScores
+  durationMs: number
+  cancelled: boolean
+}
+
+export interface DailyPlayTime {
+  date: string
+  ms: number
 }

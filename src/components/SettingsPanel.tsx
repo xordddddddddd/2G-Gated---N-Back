@@ -280,15 +280,11 @@ export function SettingsPanel({ settings, onUpdate, onReset }: SettingsPanelProp
               checked={settings.showTrialCounter}
               onChange={(showTrialCounter) => onUpdate({ showTrialCounter })}
             />
-            <Toggle
-              label="Output gate hint"
-              checked={settings.showOutputGate}
-              onChange={(showOutputGate) => onUpdate({ showOutputGate })}
-            />
-            <Toggle
-              label="Warm-up hint"
-              checked={settings.showWarmupHint}
-              onChange={(showWarmupHint) => onUpdate({ showWarmupHint })}
+            <Select
+              value={settings.feedbackMode}
+              options={['show', 'hide'] as const}
+              onChange={(feedbackMode) => onUpdate({ feedbackMode })}
+              format={(m) => (m === 'show' ? 'Show feedback' : 'Hide feedback')}
             />
           </>
         )}

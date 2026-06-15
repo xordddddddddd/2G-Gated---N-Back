@@ -1,7 +1,27 @@
-import type { SessionStats, TrialResult } from '../types/game'
+import { emptyStreamScores } from './history'
+import type { SessionStats, Stream, StreamScores, TrialResult } from '../types/game'
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
+}
+
+function computeStreamScores(results: TrialResult[]): StreamScores {
+  const totals: Record<Stream, number> = { position: 0, letter: 0, color: 0, shape: 0 }
+  const correct: Record<Stream, number> = { position: 0, letter: 0, color: 0, shape: 0 }
+
+  for (const result of results) {
+    for (const stream of result.activeStreams) {
+      totals[stream]++
+      if (result.streamCorrect?.[stream]) correct[stream]++
+    }
+  }
+
+  return {
+    position: totals.position ? Math.round((correct.position / totals.position) * 100) : 0,
+    letter: totals.letter ? Math.round((correct.letter / totals.letter) * 100) : 0,
+    color: totals.color ? Math.round((correct.color / totals.color) * 100) : 0,
+    shape: totals.shape ? Math.round((correct.shape / totals.shape) * 100) : 0,
+  }
 }
 
 export function computeStats(results: TrialResult[]): SessionStats {
@@ -16,6 +36,14 @@ export function computeStats(results: TrialResult[]): SessionStats {
 
   const zHit = inverseNormalCDF(clamp(hitRate, 0.01, 0.99))
   const zFa = inverseNormalCDF(clamp(faRate, 0.01, 0.99))
+  const streamScores = computeStreamScores(results)
+  const streamValues = Object.values(streamScores).filter((v) => v > 0)
+  const avgStream =
+    streamValues.length > 0
+      ? streamValues.reduce((a, b) => a + b, 0) / streamValues.length
+      : total > 0
+        ? Math.round(((hits + correctRejects) / total) * 100)
+        : 0
 
   return {
     hits,
@@ -24,6 +52,9 @@ export function computeStats(results: TrialResult[]): SessionStats {
     correctRejects,
     accuracy: total > 0 ? (hits + correctRejects) / total : 0,
     dPrime: zHit - zFa,
+    streamScores: streamScores.position + streamScores.letter + streamScores.color + streamScores.shape > 0
+      ? streamScores
+      : { ...emptyStreamScores(), position: avgStream },
   }
 }
 
@@ -80,10 +111,16 @@ function inverseNormalCDF(p: number): number {
 }
 
 export function suggestNLevel(stats: SessionStats, current: number): number {
-  if (stats.accuracy >= 0.85 && stats.dPrime >= 1.5) {
+  const avg =
+    (stats.streamScores.position +
+      stats.streamScores.letter +
+      stats.streamScores.color +
+      stats.streamScores.shape) /
+    4
+  if (avg >= 80 && stats.dPrime >= 1.5) {
     return Math.min(current + 1, 9)
   }
-  if (stats.accuracy < 0.55 || stats.dPrime < 0.5) {
+  if (avg < 55 || stats.dPrime < 0.5) {
     return Math.max(current - 1, 1)
   }
   return current

@@ -1,7 +1,8 @@
 import { getKeyForStream } from '../lib/response'
+import { createIdleGate, createIdleStimulus } from '../lib/sequence'
 import { StimulusGrid } from './StimulusGrid'
 import { StreamKeyPanel } from './StreamKeyPanel'
-import type { GameSettings, InputGate, Stimulus, Stream } from '../types/game'
+import type { GameSettings, InputGate, Stimulus, Stream, Trial } from '../types/game'
 
 interface QuadBoardProps {
   stimulus: Stimulus
@@ -9,6 +10,8 @@ interface QuadBoardProps {
   settings: GameSettings
   pressedStreams: Set<Stream>
   onStreamPress: (stream: Stream) => void
+  idle?: boolean
+  interactive?: boolean
 }
 
 export function QuadBoard({
@@ -17,50 +20,89 @@ export function QuadBoard({
   settings,
   pressedStreams,
   onStreamPress,
+  idle = false,
+  interactive = true,
 }: QuadBoardProps) {
   const keys = settings.keys
+  const gate = idle ? createIdleGate() : inputGate
+  const displayStimulus = idle ? createIdleStimulus() : stimulus
 
   return (
-    <div className="flex flex-col items-center justify-center gap-3 sm:gap-5 w-full">
+    <div className="flex flex-col items-center justify-center gap-1">
       <StreamKeyPanel
         stream="color"
         keyLabel={getKeyForStream('color', keys)}
-        active={inputGate.color}
+        active={gate.color}
         pressed={pressedStreams.has('color')}
         onPress={() => onStreamPress('color')}
         layout="top"
+        disabled={!interactive}
       />
 
-      <div className="flex items-center justify-center gap-3 sm:gap-8">
+      <div className="flex items-center justify-center gap-2">
         <StreamKeyPanel
           stream="position"
           keyLabel={getKeyForStream('position', keys)}
-          active={inputGate.position}
+          active={gate.position}
           pressed={pressedStreams.has('position')}
           onPress={() => onStreamPress('position')}
           layout="left"
+          disabled={!interactive}
         />
 
-        <StimulusGrid stimulus={stimulus} inputGate={inputGate} />
+        <StimulusGrid stimulus={displayStimulus} inputGate={gate} idle={idle} />
 
         <StreamKeyPanel
           stream="shape"
           keyLabel={getKeyForStream('shape', keys)}
-          active={inputGate.shape}
+          active={gate.shape}
           pressed={pressedStreams.has('shape')}
           onPress={() => onStreamPress('shape')}
           layout="right"
+          disabled={!interactive}
         />
       </div>
 
       <StreamKeyPanel
         stream="letter"
         keyLabel={getKeyForStream('letter', keys)}
-        active={inputGate.letter}
+        active={gate.letter}
         pressed={pressedStreams.has('letter')}
         onPress={() => onStreamPress('letter')}
         layout="bottom"
+        disabled={!interactive}
       />
     </div>
+  )
+}
+
+export function QuadBoardFromTrial({
+  trial,
+  settings,
+  pressedStreams,
+  onStreamPress,
+  idle,
+  interactive,
+}: {
+  trial: Trial | null
+  settings: GameSettings
+  pressedStreams: Set<Stream>
+  onStreamPress: (stream: Stream) => void
+  idle?: boolean
+  interactive?: boolean
+}) {
+  const stimulus = trial?.stimulus ?? createIdleStimulus()
+  const inputGate = trial?.inputGate ?? createIdleGate()
+
+  return (
+    <QuadBoard
+      stimulus={stimulus}
+      inputGate={inputGate}
+      settings={settings}
+      pressedStreams={pressedStreams}
+      onStreamPress={onStreamPress}
+      idle={idle ?? !trial}
+      interactive={interactive}
+    />
   )
 }
