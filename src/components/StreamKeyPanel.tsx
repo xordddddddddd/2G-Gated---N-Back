@@ -1,3 +1,4 @@
+import { usePointerPress } from '../hooks/usePointerPress'
 import { STREAM_LABELS } from '../lib/constants'
 import type { Stream } from '../types/game'
 
@@ -24,16 +25,14 @@ export function StreamKeyPanel({
   disabled = false,
 }: StreamKeyPanelProps) {
   const label = STREAM_LABELS[stream]
+  const isDisabled = !active || disabled
+  const pointerPress = usePointerPress(onPress, isDisabled)
 
   return (
     <button
       type="button"
-      onPointerDown={(e) => e.preventDefault()}
-      onClick={(e) => {
-        e.preventDefault()
-        onPress()
-      }}
-      disabled={!active || disabled}
+      {...pointerPress}
+      disabled={isDisabled}
       className={[
         'flex flex-col items-center justify-center gap-3 select-none rounded-lg px-2 py-1',
         'focus:outline-none focus-visible:ring-1 focus-visible:ring-white/40',
