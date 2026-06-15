@@ -129,3 +129,45 @@
 .p2-2-0 { transform: translate3d(20.1svmin, 20.1svmin, -20.1svmin); }
 .p2-2-1 { transform: translate3d(20.1svmin, 20.1svmin, 0); }
 .p2-2-2 { transform: translate3d(20.1svmin, 20.1svmin, 20.1svmin); }
+
+/* 2G output gate labels on 3D grid (fixed, do not rotate with scene) */
+.grid3d-gate-layout {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.5rem, 2vw, 1.5rem);
+  pointer-events: none;
+  user-select: none;
+}
+
+.grid3d-gate-side {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.5rem;
+  opacity: 0.92;
+  z-index: 5;
+}
+
+.grid3d-viewport--gated {
+  position: relative;
+  inset: auto;
+  flex: 1 1 auto;
+  width: auto;
+  height: 100%;
+  max-width: 60.3svmin;
+  min-width: 0;
+}
+
+.grid3d-gate-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  pointer-events: none;
+}
