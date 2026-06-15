@@ -57,12 +57,10 @@ export function GameScreen({
         </div>
       </header>
 
-      {settings.showOutputGate && (
-        <div className="px-4 py-2 text-center text-xs text-white/50 border-b border-white/5">
-          Output: <span className="text-warning font-semibold">{output.label}</span>
-          <span className="hidden sm:inline"> — {output.description}</span>
-        </div>
-      )}
+      <div className="px-4 py-2 text-center text-xs text-white/50 border-b border-white/5">
+        Output: <span className="text-warning font-semibold">{output.label}</span>
+        <span className="hidden sm:inline"> — {output.description}</span>
+      </div>
 
       <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 gap-4">
         <QuadBoard
@@ -82,7 +80,7 @@ export function GameScreen({
           </p>
         )}
 
-        {!isScorable && settings.showWarmupHint && (
+        {!isScorable && (
           <p className="text-xs text-white/40 text-center">
             Warm-up {trialIndex + 1} / {nLevel}
           </p>

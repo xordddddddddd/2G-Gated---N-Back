@@ -1,4 +1,4 @@
-import { COLORS, INPUT_GATE_PATTERNS, LETTERS, SHAPES } from './constants'
+import { COLORS, INPUT_GATE_PATTERNS, getLettersForMode, getShapesForMode } from './constants'
 import { pickOutputGate } from './response'
 import type { GameSettings, InputGate, OutputGate, Stimulus, Trial } from '../types/game'
 
@@ -10,21 +10,35 @@ function randomPosition(): number {
   return Math.floor(Math.random() * 9)
 }
 
-function createStimulus(overrides: Partial<Stimulus> = {}): Stimulus {
+function createStimulus(settings: Pick<GameSettings, 'audioMode' | 'shapeMode'>, overrides: Partial<Stimulus> = {}): Stimulus {
+  const letters = getLettersForMode(settings.audioMode)
+  const shapes = getShapesForMode(settings.shapeMode)
   return {
     position: randomPosition(),
-    letter: randomItem(LETTERS),
+    letter: randomItem(letters),
     color: randomItem(COLORS).id,
-    shape: randomItem(SHAPES).id,
+    shape: randomItem(shapes).id,
     ...overrides,
   }
 }
 
-function pickInputGate(index: number, settings: Pick<GameSettings, 'enableInputGating' | 'enabledStreams'>): InputGate {
+function pickInputGate(
+  index: number,
+  settings: Pick<GameSettings, 'enableInputGating' | 'enabledStreams' | 'rotationSpeed' | 'gameMode'>,
+): InputGate {
+  if (settings.gameMode === 'dual') {
+    return {
+      position: settings.enabledStreams.position,
+      letter: settings.enabledStreams.letter,
+      color: false,
+      shape: false,
+    }
+  }
   if (!settings.enableInputGating) {
     return { ...settings.enabledStreams }
   }
-  const pattern = INPUT_GATE_PATTERNS[index % INPUT_GATE_PATTERNS.length]
+  const step = Math.max(1, Math.round(settings.rotationSpeed / 10))
+  const pattern = INPUT_GATE_PATTERNS[Math.floor(index / step) % INPUT_GATE_PATTERNS.length]
   return {
     position: pattern.position && settings.enabledStreams.position,
     letter: pattern.letter && settings.enabledStreams.letter,
@@ -33,11 +47,7 @@ function pickInputGate(index: number, settings: Pick<GameSettings, 'enableInputG
   }
 }
 
-function copyStreamFrom(
-  target: Stimulus,
-  source: Stimulus,
-  gate: InputGate,
-): Stimulus {
+function copyStreamFrom(target: Stimulus, source: Stimulus, gate: InputGate): Stimulus {
   return {
     position: gate.position ? source.position : target.position,
     letter: gate.letter ? source.letter : target.letter,
@@ -46,15 +56,33 @@ function copyStreamFrom(
   }
 }
 
+function applyInterference(
+  stimulus: Stimulus,
+  trials: Trial[],
+  currentIndex: number,
+  nLevel: number,
+  gate: InputGate,
+  interference: number,
+): Stimulus {
+  if (Math.random() >= interference || currentIndex < nLevel + 2) return stimulus
+  const pastIndex = Math.floor(Math.random() * Math.min(currentIndex - 1, nLevel * 2))
+  const past = trials[pastIndex]?.stimulus
+  if (!past) return stimulus
+
+  const active = (['position', 'letter', 'color', 'shape'] as const).filter((s) => gate[s])
+  if (active.length === 0) return stimulus
+  const stream = randomItem(active)
+  return { ...stimulus, [stream]: past[stream] }
+}
+
 function generateMatchTrial(
   past: Stimulus,
   gate: InputGate,
   outputGate: OutputGate,
+  settings: Pick<GameSettings, 'audioMode' | 'shapeMode'>,
 ): Stimulus {
-  const base = createStimulus()
-  const activeStreams = (['position', 'letter', 'color', 'shape'] as const).filter(
-    (s) => gate[s],
-  )
+  const base = createStimulus(settings)
+  const activeStreams = (['position', 'letter', 'color', 'shape'] as const).filter((s) => gate[s])
 
   if (activeStreams.length === 0) return base
 
@@ -72,6 +100,8 @@ function generateMatchTrial(
       }
       const matchStream = randomItem(activeStreams)
       const result = copyStreamFrom(base, past, { ...gate, [matchStream]: true })
+      const letters = getLettersForMode(settings.audioMode)
+      const shapes = getShapesForMode(settings.shapeMode)
       for (const stream of activeStreams) {
         if (stream === matchStream) continue
         if (stream === 'position') {
@@ -80,7 +110,7 @@ function generateMatchTrial(
           result.position = value
         } else if (stream === 'letter') {
           let value = result.letter
-          while (value === past.letter) value = randomItem(LETTERS)
+          while (value === past.letter) value = randomItem(letters)
           result.letter = value
         } else if (stream === 'color') {
           let value = result.color
@@ -88,7 +118,7 @@ function generateMatchTrial(
           result.color = value
         } else {
           let value = result.shape
-          while (value === past.shape) value = randomItem(SHAPES).id
+          while (value === past.shape) value = randomItem(shapes).id
           result.shape = value
         }
       }
@@ -101,24 +131,25 @@ function generateNonMatchTrial(
   past: Stimulus,
   gate: InputGate,
   outputGate: OutputGate,
+  settings: Pick<GameSettings, 'audioMode' | 'shapeMode'>,
 ): Stimulus {
-  let stimulus = createStimulus()
+  let stimulus = createStimulus(settings)
   let attempts = 0
+  const letters = getLettersForMode(settings.audioMode)
+  const shapes = getShapesForMode(settings.shapeMode)
 
   while (attempts < 50) {
     const wouldMatch = wouldTrialMatch(stimulus, past, gate, outputGate)
     if (!wouldMatch) return stimulus
 
-    const activeStreams = (['position', 'letter', 'color', 'shape'] as const).filter(
-      (s) => gate[s],
-    )
+    const activeStreams = (['position', 'letter', 'color', 'shape'] as const).filter((s) => gate[s])
 
     for (const stream of activeStreams) {
       if (stimulus[stream] === past[stream]) {
         if (stream === 'position') stimulus = { ...stimulus, position: randomPosition() }
-        else if (stream === 'letter') stimulus = { ...stimulus, letter: randomItem(LETTERS) }
+        else if (stream === 'letter') stimulus = { ...stimulus, letter: randomItem(letters) }
         else if (stream === 'color') stimulus = { ...stimulus, color: randomItem(COLORS).id }
-        else stimulus = { ...stimulus, shape: randomItem(SHAPES).id }
+        else stimulus = { ...stimulus, shape: randomItem(shapes).id }
       }
     }
     attempts++
@@ -147,9 +178,7 @@ function wouldTrialMatch(
   }
 }
 
-export function generateTrials(
-  settings: Pick<GameSettings, 'nLevel' | 'trialCount' | 'matchProbability' | 'outputGateMode' | 'enableInputGating' | 'enabledStreams'>,
-): Trial[] {
+export function generateTrials(settings: GameSettings): Trial[] {
   const nLevel = settings.nLevel
   const count = settings.nLevel + settings.trialCount
   const trials: Trial[] = []
@@ -157,7 +186,7 @@ export function generateTrials(
 
   for (let i = 0; i < warmup; i++) {
     trials.push({
-      stimulus: createStimulus(),
+      stimulus: createStimulus(settings),
       inputGate: pickInputGate(i, settings),
       outputGate: pickOutputGate(i, settings.outputGateMode),
     })
@@ -169,12 +198,27 @@ export function generateTrials(
     const outputGate = pickOutputGate(i, settings.outputGateMode)
     const shouldMatch = Math.random() < settings.matchProbability
 
-    const stimulus = shouldMatch
-      ? generateMatchTrial(past, inputGate, outputGate)
-      : generateNonMatchTrial(past, inputGate, outputGate)
+    let stimulus = shouldMatch
+      ? generateMatchTrial(past, inputGate, outputGate, settings)
+      : generateNonMatchTrial(past, inputGate, outputGate, settings)
+
+    stimulus = applyInterference(stimulus, trials, i, nLevel, inputGate, settings.interference)
 
     trials.push({ stimulus, inputGate, outputGate })
   }
 
   return trials
+}
+
+export function createIdleStimulus(): Stimulus {
+  return {
+    position: 4,
+    letter: 'C',
+    color: 'blue',
+    shape: 'circle',
+  }
+}
+
+export function createIdleGate(): InputGate {
+  return { position: true, letter: true, color: true, shape: true }
 }
