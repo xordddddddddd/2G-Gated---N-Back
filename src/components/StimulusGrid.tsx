@@ -1,7 +1,8 @@
-import { CELL_PX, COLORS, GRID_PX } from '../lib/constants'
+import { CELL_PX, COLORS, GRID_PX, LIME_MARKER_HEX, ORANGE_MARKER_HEX } from '../lib/constants'
+import { toDisplayPosition } from '../lib/grid3d'
 import { GateCellContent, GateLabel } from './GateOverlay'
 import { ShapeIcon } from './ShapeIcon'
-import type { GameMode, InputGate, OutputGate, Stimulus } from '../types/game'
+import type { GameMode, GridMode, InputGate, OutputGate, Stimulus } from '../types/game'
 
 const CENTER_CELL = 4
 
@@ -13,6 +14,8 @@ interface StimulusGridProps {
   outputGate?: OutputGate
   showGate?: boolean
   trialIndex?: number
+  stimulusVisible?: boolean
+  gridMode?: GridMode
 }
 
 function shapeFillColor(
@@ -36,14 +39,22 @@ export function StimulusGrid({
   outputGate = 'or',
   showGate = false,
   trialIndex = 0,
+  stimulusVisible = true,
+  gridMode = '2d',
 }: StimulusGridProps) {
   const color = COLORS.find((c) => c.id === stimulus.color) ?? COLORS[0]
   const cells = Array.from({ length: 9 }, (_, i) => i)
-  const activePosition = stimulus.position
-  const showShape = !idle && inputGate.shape
-  const showColorDot = !idle && inputGate.color && !inputGate.shape
-  const showColorShape = !idle && inputGate.color && inputGate.shape
+  const showStimulus = !idle && stimulusVisible
+  const is2G = gameMode === '2g'
+
+  const limeIndex = toDisplayPosition(stimulus.position, gridMode)
+  const orangeIndex = toDisplayPosition(stimulus.orangePosition, gridMode)
+
+  const showShape = showStimulus && inputGate.shape
+  const showColorDot = showStimulus && inputGate.color && !inputGate.shape
+  const showColorShape = showStimulus && inputGate.color && inputGate.shape
   const shapeSize = Math.round(CELL_PX * 0.72)
+  const markerSize = Math.round(CELL_PX * 0.62)
 
   return (
     <div className="gate-2d-layout shrink-0">
@@ -65,64 +76,96 @@ export function StimulusGrid({
           background: '#000',
         }}
       >
-      {cells.map((i) => {
-        const isActive = !idle && i === activePosition
-        const highlightPosition = isActive && inputGate.position
-        const onWhiteCell = Boolean(highlightPosition)
-        const shapeColor = shapeFillColor(gameMode, inputGate, color.hex, onWhiteCell)
+        {cells.map((i) => {
+          const isLime = showStimulus && is2G && i === limeIndex
+          const isOrange = showStimulus && is2G && i === orangeIndex
+          const isActive = showStimulus && !is2G && i === stimulus.position
+          const highlightPosition = isActive && inputGate.position
+          const onWhiteCell = Boolean(highlightPosition)
+          const shapeColor = shapeFillColor(gameMode, inputGate, color.hex, onWhiteCell)
 
-        return (
-          <div
-            key={i}
-            className="relative border border-white/80 overflow-hidden"
-            style={{ width: CELL_PX, height: CELL_PX }}
-          >
-            {i === CENTER_CELL && (
-              <GateCellContent outputGate={outputGate} visible={showGate} />
-            )}
-            {highlightPosition && (
-              <div
-                key={`hl-${trialIndex}`}
-                className="absolute inset-0 bg-white z-[1] stimulus-cell-pulse"
-                aria-hidden
-              />
-            )}
-            {isActive && showColorDot && (
-              <div
-                key={`color-${trialIndex}`}
-                className="absolute inset-0 flex items-center justify-center pointer-events-none z-[2] stimulus-cell-pulse"
-              >
+          return (
+            <div
+              key={i}
+              className="relative border border-white/80 overflow-hidden"
+              style={{ width: CELL_PX, height: CELL_PX }}
+            >
+              {i === CENTER_CELL && (
+                <GateCellContent outputGate={outputGate} visible={showGate} />
+              )}
+              {highlightPosition && (
                 <div
-                  className="rounded-full"
-                  style={{
-                    width: shapeSize * 0.55,
-                    height: shapeSize * 0.55,
-                    backgroundColor: color.hex,
-                  }}
+                  key={`hl-${trialIndex}`}
+                  className="absolute inset-0 bg-white z-[1] stimulus-cell-pulse"
+                  aria-hidden
                 />
-              </div>
-            )}
-            {isActive && showShape && (
-              <div
-                key={`shape-${trialIndex}`}
-                className="absolute inset-0 flex items-center justify-center pointer-events-none z-[2] stimulus-cell-pulse"
-              >
-                <ShapeIcon shapeId={stimulus.shape} color={shapeColor} size={shapeSize} />
-                {showColorShape && (
+              )}
+              {isLime && (
+                <div
+                  key={`lime-${trialIndex}`}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-[2] stimulus-cell-pulse"
+                >
                   <div
-                    className="absolute rounded-full"
+                    className="rounded-full"
                     style={{
-                      width: shapeSize * 0.32,
-                      height: shapeSize * 0.32,
+                      width: markerSize,
+                      height: markerSize,
+                      backgroundColor: LIME_MARKER_HEX,
+                    }}
+                  />
+                </div>
+              )}
+              {isOrange && (
+                <div
+                  key={`orange-${trialIndex}`}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-[2] stimulus-cell-pulse"
+                >
+                  <div
+                    className="rounded-full"
+                    style={{
+                      width: markerSize,
+                      height: markerSize,
+                      backgroundColor: ORANGE_MARKER_HEX,
+                    }}
+                  />
+                </div>
+              )}
+              {isActive && showColorDot && (
+                <div
+                  key={`color-${trialIndex}`}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-[2] stimulus-cell-pulse"
+                >
+                  <div
+                    className="rounded-full"
+                    style={{
+                      width: shapeSize * 0.55,
+                      height: shapeSize * 0.55,
                       backgroundColor: color.hex,
                     }}
                   />
-                )}
-              </div>
-            )}
-          </div>
-        )
-      })}
+                </div>
+              )}
+              {isActive && showShape && (
+                <div
+                  key={`shape-${trialIndex}`}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-[2] stimulus-cell-pulse"
+                >
+                  <ShapeIcon shapeId={stimulus.shape} color={shapeColor} size={shapeSize} />
+                  {showColorShape && (
+                    <div
+                      className="absolute rounded-full"
+                      style={{
+                        width: shapeSize * 0.32,
+                        height: shapeSize * 0.32,
+                        backgroundColor: color.hex,
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {showGate && (

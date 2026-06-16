@@ -23,14 +23,25 @@ const gate = (
   letter: boolean,
   color: boolean,
   shape: boolean,
-): InputGate => ({ position, letter, color, shape })
+  orangePosition = false,
+  number = false,
+): InputGate => ({
+  position,
+  orangePosition,
+  letter,
+  number,
+  color,
+  shape,
+})
 
 const stim = (
   position: number,
   letter: string,
   color: string,
   shape: string,
-): Stimulus => ({ position, letter, color, shape })
+  orangePosition = 0,
+  number = '1',
+): Stimulus => ({ position, orangePosition, letter, number, color, shape })
 
 const trial = (
   stimulus: Stimulus,

@@ -1,8 +1,10 @@
-import type { GameSettings, InputGate, OutputGate, Stream, StreamKeys } from '../types/game'
+import type { GameMode, GameSettings, InputGate, OutputGate, Stream, StreamKeys } from '../types/game'
 
 export const LETTERS_5 = ['C', 'H', 'K', 'L', 'Q'] as const
 export const LETTERS_8 = ['C', 'H', 'K', 'L', 'Q', 'R', 'S', 'T'] as const
 export const LETTERS = LETTERS_8
+
+export const NUMBERS_8 = ['1', '2', '3', '4', '5', '6', '7', '8'] as const
 
 export const COLORS = [
   { id: 'red', hex: '#ef4444', label: 'Red' },
@@ -12,6 +14,9 @@ export const COLORS = [
   { id: 'purple', hex: '#a855f7', label: 'Purple' },
   { id: 'orange', hex: '#f97316', label: 'Orange' },
 ] as const
+
+export const LIME_MARKER_HEX = '#a3e635'
+export const ORANGE_MARKER_HEX = '#f97316'
 
 export const SHAPES_BASIC = [
   { id: 'circle', label: 'Circle', path: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z' },
@@ -32,11 +37,24 @@ export const CELL_PX = GRID_PX / GRID_SIZE
 
 export const STREAM_LABELS: Record<Stream, string> = {
   position: 'Position',
+  orangePosition: 'Orange',
   letter: 'Audio',
+  number: 'Numbers',
   color: 'Color',
   shape: 'Shape',
 }
 
+export const TWO_G_STREAM_LABELS: Record<Stream, string> = {
+  position: 'Lime',
+  orangePosition: 'Orange',
+  letter: 'Letters',
+  number: 'Numbers',
+  color: 'Color',
+  shape: 'Shape',
+}
+
+export const QUAD_STREAMS: Stream[] = ['color', 'position', 'shape', 'letter']
+export const TWO_G_STREAMS: Stream[] = ['position', 'orangePosition', 'letter', 'number']
 export const STREAM_DISPLAY_ORDER: Stream[] = ['color', 'position', 'shape', 'letter']
 
 export const OUTPUT_GATE_LABELS: Record<OutputGate, { label: string; symbol: string; description: string }> = {
@@ -64,15 +82,19 @@ export const GAME_MODE_LABELS = {
 } as const
 
 export const DEFAULT_STREAM_KEYS: StreamKeys = {
-  position: 'a',
+  position: 'f',
+  orangePosition: 'f',
+  letter: 'l',
+  number: 'l',
   color: 'f',
   shape: 'j',
-  letter: 'l',
 }
 
 export const DEFAULT_ENABLED_STREAMS: InputGate = {
   position: true,
+  orangePosition: true,
   letter: true,
+  number: true,
   color: true,
   shape: true,
 }
@@ -109,24 +131,32 @@ export const DEFAULT_SETTINGS: GameSettings = {
   variableTiming: false,
 }
 
-export const INPUT_GATE_PATTERNS: InputGatePattern[] = [
-  { position: true, letter: true, color: false, shape: false },
-  { position: true, letter: false, color: true, shape: false },
-  { position: false, letter: true, color: false, shape: true },
-  { position: false, letter: false, color: true, shape: true },
-  { position: true, letter: true, color: true, shape: false },
-  { position: true, letter: false, color: true, shape: true },
-  { position: false, letter: true, color: true, shape: true },
-  { position: true, letter: true, color: true, shape: true },
+export const INPUT_GATE_PATTERNS: InputGate[] = [
+  { position: true, letter: true, orangePosition: false, number: false, color: false, shape: false },
+  { position: true, letter: false, orangePosition: false, number: false, color: true, shape: false },
+  { position: false, letter: true, orangePosition: false, number: false, color: false, shape: true },
+  { position: false, letter: false, orangePosition: false, number: false, color: true, shape: true },
+  { position: true, letter: true, orangePosition: false, number: false, color: true, shape: false },
+  { position: true, letter: false, orangePosition: false, number: false, color: true, shape: true },
+  { position: false, letter: true, orangePosition: false, number: false, color: true, shape: true },
+  { position: true, letter: true, orangePosition: false, number: false, color: true, shape: true },
 ]
 
-/** 2G block-level input pairs — attend to 2 of 4 streams per block (PDF spec). */
+/** 2G block-level input pairs — Lime+Letters / Orange+Numbers (i3 / PDF spec). */
 export const TWO_G_INPUT_PAIRS: InputGate[] = [
-  { position: true, letter: true, color: false, shape: false },
-  { position: false, letter: false, color: true, shape: true },
+  { position: true, letter: true, orangePosition: false, number: false, color: false, shape: false },
+  { position: false, letter: false, orangePosition: true, number: true, color: false, shape: false },
 ]
 
 export const TWO_G_BLOCK_SCORABLE_TRIALS = 20
+export const TWO_G_SESSION_BLOCKS = 10
+export const TWO_G_STIMULUS_VISIBLE_MS = 500
+export const TWO_G_ADAPTIVE_UP_PCT = 90
+export const TWO_G_ADAPTIVE_DOWN_PCT = 70
+
+export function getStreamsForMode(gameMode: GameMode): Stream[] {
+  return gameMode === '2g' ? TWO_G_STREAMS : QUAD_STREAMS
+}
 
 export function get2GBlockLength(nLevel: number): number {
   return TWO_G_BLOCK_SCORABLE_TRIALS + nLevel
@@ -141,19 +171,24 @@ export function is2GBlockStart(trialIndex: number, nLevel: number): boolean {
 }
 
 export function get2GActivePairLabel(gate: InputGate): string {
-  if (gate.position && gate.letter) return 'Position + Audio'
-  if (gate.color && gate.shape) return 'Color + Shape'
+  if (gate.position && gate.letter) return 'Lime Position + Letters'
+  if (gate.orangePosition && gate.number) return 'Orange Position + Numbers'
   const parts: string[] = []
-  if (gate.position) parts.push('Position')
-  if (gate.letter) parts.push('Audio')
+  if (gate.position) parts.push('Lime')
+  if (gate.orangePosition) parts.push('Orange')
+  if (gate.letter) parts.push('Letters')
+  if (gate.number) parts.push('Numbers')
   if (gate.color) parts.push('Color')
   if (gate.shape) parts.push('Shape')
   return parts.join(' + ') || '—'
 }
 
-export function get2GTotalTrials(trialCount: number, nLevel: number): number {
-  const numBlocks = Math.max(1, Math.ceil(trialCount / TWO_G_BLOCK_SCORABLE_TRIALS))
-  return numBlocks * get2GBlockLength(nLevel)
+export function get2GSessionScorableTrials(): number {
+  return TWO_G_SESSION_BLOCKS * TWO_G_BLOCK_SCORABLE_TRIALS
+}
+
+export function get2GTotalTrials(nLevel: number): number {
+  return TWO_G_SESSION_BLOCKS * get2GBlockLength(nLevel)
 }
 
 export function is2GTrialScorable(trialIndex: number, nLevel: number): boolean {
@@ -166,13 +201,6 @@ export function get2GPlayedIndex(trialIndex: number, nLevel: number): number {
   const blockIndex = Math.floor(trialIndex / blockLength)
   const posInBlock = trialIndex % blockLength
   return blockIndex * TWO_G_BLOCK_SCORABLE_TRIALS + Math.max(posInBlock - nLevel, 0)
-}
-
-interface InputGatePattern {
-  position: boolean
-  letter: boolean
-  color: boolean
-  shape: boolean
 }
 
 export function getLettersForMode(mode: GameSettings['audioMode']): readonly string[] {
@@ -197,4 +225,26 @@ export const N_LEVEL_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 export function getGameLabel(settings: Pick<GameSettings, 'gameMode' | 'nLevel'>): string {
   const prefix = settings.gameMode === 'quad' ? 'Q' : settings.gameMode === 'dual' ? 'D' : '2G'
   return `${prefix}${settings.nLevel}B`
+}
+
+export const TWO_G_DEFAULT_SETTINGS: Partial<GameSettings> = {
+  enableInputGating: true,
+  responseMode: 'per-stream',
+  outputGateMode: 'random',
+  trialCount: get2GSessionScorableTrials(),
+  intervalMs: 3000,
+  interference: 0.2,
+  responseSwitching: true,
+  variableTiming: true,
+  autoProgression: true,
+  autoProgressionThreshold: TWO_G_ADAPTIVE_UP_PCT / 100,
+  adaptive: true,
+  keys: {
+    position: 'f',
+    orangePosition: 'f',
+    letter: 'l',
+    number: 'l',
+    color: 'f',
+    shape: 'j',
+  },
 }

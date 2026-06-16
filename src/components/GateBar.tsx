@@ -11,7 +11,9 @@ interface GateBarProps {
 function activeStreamLabels(gate: InputGate): string {
   const parts: string[] = []
   if (gate.position) parts.push(STREAM_LABELS.position)
+  if (gate.orangePosition) parts.push(STREAM_LABELS.orangePosition)
   if (gate.letter) parts.push(STREAM_LABELS.letter)
+  if (gate.number) parts.push(STREAM_LABELS.number)
   if (gate.color) parts.push(STREAM_LABELS.color)
   if (gate.shape) parts.push(STREAM_LABELS.shape)
   return parts.join(' + ') || '—'

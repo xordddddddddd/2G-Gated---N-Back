@@ -10,6 +10,7 @@ interface QuadBoxKeyProps {
   wrong?: boolean
   onPress: () => void
   disabled?: boolean
+  labelOverride?: string
 }
 
 export function QuadBoxKey({
@@ -20,8 +21,9 @@ export function QuadBoxKey({
   wrong = false,
   onPress,
   disabled = false,
+  labelOverride,
 }: QuadBoxKeyProps) {
-  const label = STREAM_LABELS[stream]
+  const label = labelOverride ?? STREAM_LABELS[stream]
   const isDisabled = !active || disabled
   const pointerPress = usePointerPress(onPress, isDisabled)
 

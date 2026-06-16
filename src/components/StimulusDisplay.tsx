@@ -9,7 +9,9 @@ interface StimulusDisplayProps {
 
 const ALL_ACTIVE: InputGate = {
   position: true,
+  orangePosition: false,
   letter: true,
+  number: false,
   color: true,
   shape: true,
 }

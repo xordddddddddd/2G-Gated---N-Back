@@ -72,7 +72,7 @@ export function scoreColor(pct: number): string {
 }
 
 export function emptyStreamScores(): StreamScores {
-  return { position: 0, letter: 0, color: 0, shape: 0 }
+  return { position: 0, orangePosition: 0, letter: 0, number: 0, color: 0, shape: 0 }
 }
 
 export function getActivityByDay(sessions: GameSession[]): Map<string, number> {

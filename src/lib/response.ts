@@ -1,18 +1,15 @@
 import type { InputGate, OutputGate, OutputGateMode, Stream, StreamKeys, GameMode } from '../types/game'
 import { streamMatches, getActiveStreams } from './gating'
-import { get2GBlockIndex } from './constants'
 
 export function pickOutputGate(
   index: number,
   mode: OutputGateMode,
   gameMode?: GameMode,
-  nLevel?: number,
 ): OutputGate {
   if (mode !== 'random') return mode
   const gates: OutputGate[] = ['or', 'and', 'xor']
-  if (gameMode === '2g' && nLevel !== undefined) {
-    const blockIndex = get2GBlockIndex(index, nLevel)
-    return gates[blockIndex % gates.length]
+  if (gameMode === '2g') {
+    return gates[index % gates.length]
   }
   return gates[index % gates.length]
 }
@@ -90,16 +87,27 @@ export function evaluate2GResponse(
 }
 
 export function getStreamMatchesForTrial(
-  current: { position: number; letter: string; color: string; shape: string },
-  past: { position: number; letter: string; color: string; shape: string },
+  current: StimulusLike,
+  past: StimulusLike,
   gate: InputGate,
 ): Record<Stream, boolean> {
   return {
     position: gate.position && streamMatches('position', current, past),
+    orangePosition: gate.orangePosition && streamMatches('orangePosition', current, past),
     letter: gate.letter && streamMatches('letter', current, past),
+    number: gate.number && streamMatches('number', current, past),
     color: gate.color && streamMatches('color', current, past),
     shape: gate.shape && streamMatches('shape', current, past),
   }
+}
+
+interface StimulusLike {
+  position: number
+  orangePosition: number
+  letter: string
+  number: string
+  color: string
+  shape: string
 }
 
 export function evaluatePerStreamResponse(
@@ -129,9 +137,18 @@ export function evaluatePerStreamResponse(
   return { correct: false, feedback: 'miss' }
 }
 
+const ALL_KEY_STREAMS: Stream[] = [
+  'position',
+  'orangePosition',
+  'letter',
+  'number',
+  'color',
+  'shape',
+]
+
 export function streamFromKey(key: string, keys: StreamKeys): Stream | null {
   const normalized = key.toLowerCase()
-  for (const stream of ['position', 'color', 'shape', 'letter'] as Stream[]) {
+  for (const stream of ALL_KEY_STREAMS) {
     if (keys[stream].toLowerCase() === normalized) return stream
   }
   return null

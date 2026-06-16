@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react'
-import { STREAM_LABELS } from '../lib/constants'
+import { STREAM_LABELS, TWO_G_STREAMS, TWO_G_STREAM_LABELS } from '../lib/constants'
 import { formatPlayTime } from '../lib/history'
 import { averageStreamScores } from '../lib/stats'
 import { getKeyForStream } from '../lib/response'
 import { createIdleGate, createIdleStimulus } from '../lib/sequence'
-import { format2GKeyMapping, getDisplayKeyForStream } from '../lib/twoG'
+import {
+  format2GKeyMapping,
+  get2GActivePair,
+  get2GAudioLabel,
+  get2GSpatialLabel,
+  getDisplayKeyForStream,
+} from '../lib/twoG'
 import { BlockCueOverlay } from './BlockCueOverlay'
 import { GateBar } from './GateBar'
 import { Grid3DOverlay } from './Grid3DOverlay'
@@ -45,6 +51,9 @@ export function QuadLayout({
   correctStreams,
   blockCue,
   awaitingBlockCue,
+  stimulusVisible,
+  blockNumber,
+  totalBlocks,
   handlePlay,
   stopSession,
   dismissResults,
@@ -69,6 +78,7 @@ export function QuadLayout({
   const keys = settings.keys
   const interactive = isPlaying
   const keysSwapped = trial?.keysSwapped ?? false
+  const active2GPair = settings.gameMode === '2g' ? get2GActivePair(gate) : null
   const streamKeyLabel = (stream: Stream) =>
     settings.gameMode === '2g'
       ? getDisplayKeyForStream(stream, keys, gate, keysSwapped)
@@ -77,6 +87,12 @@ export function QuadLayout({
     settings.gameMode === '2g' && isPlaying
       ? format2GKeyMapping(gate, keys, keysSwapped)
       : ''
+  const resultStreams: Stream[] =
+    settings.gameMode === '2g'
+      ? TWO_G_STREAMS
+      : (['position', 'letter', 'color', 'shape'] as Stream[])
+  const streamLabelForResults = (stream: Stream) =>
+    settings.gameMode === '2g' ? TWO_G_STREAM_LABELS[stream] : STREAM_LABELS[stream]
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -171,8 +187,9 @@ export function QuadLayout({
         <div className="px-6 py-2 text-xs text-white/50 border-b border-white/10 text-center shrink-0 z-20">
           {settings.gameMode === '2g' ? (
             <>
-              Attend to the active pair shown each block. Press stream keys when the output gate rule
-              is satisfied (OR / AND / XOR).
+              Attend to the active pair each block. Press <b>F</b> for spatial and <b>L</b> for audio
+              when the output gate rule is satisfied (OR / AND / XOR). Stimuli show for 500ms, then
+              blank until the next trial.
               {' · '}
               <b>Space</b> Play · <b>Esc</b> Stop
             </>
@@ -212,6 +229,7 @@ export function QuadLayout({
               outputGate={trial?.outputGate ?? 'or'}
               showGate={settings.gameMode === '2g' && !showIdle}
               trialIndex={isPlaying ? trialIndex : 0}
+              stimulusVisible={stimulusVisible}
             />
           )}
 
@@ -239,45 +257,75 @@ export function QuadLayout({
             </div>
 
             <div className="qb-keys-left">
-              <QuadBoxKey
-                stream="color"
-                keyLabel={streamKeyLabel('color')}
-                active={gate.color}
-                correct={correctStreams.has('color')}
-                wrong={wrongStreams.has('color')}
-                onPress={() => handleStreamPress('color')}
-                disabled={!interactive}
-              />
-              <QuadBoxKey
-                stream="position"
-                keyLabel={streamKeyLabel('position')}
-                active={gate.position}
-                correct={correctStreams.has('position')}
-                wrong={wrongStreams.has('position')}
-                onPress={() => handleStreamPress('position')}
-                disabled={!interactive}
-              />
+              {settings.gameMode === '2g' && active2GPair ? (
+                <QuadBoxKey
+                  stream={active2GPair.spatial}
+                  keyLabel={streamKeyLabel(active2GPair.spatial)}
+                  active
+                  correct={correctStreams.has(active2GPair.spatial)}
+                  wrong={wrongStreams.has(active2GPair.spatial)}
+                  onPress={() => handleStreamPress(active2GPair.spatial)}
+                  disabled={!interactive}
+                  labelOverride={get2GSpatialLabel(gate)}
+                />
+              ) : (
+                <>
+                  <QuadBoxKey
+                    stream="color"
+                    keyLabel={streamKeyLabel('color')}
+                    active={gate.color}
+                    correct={correctStreams.has('color')}
+                    wrong={wrongStreams.has('color')}
+                    onPress={() => handleStreamPress('color')}
+                    disabled={!interactive}
+                  />
+                  <QuadBoxKey
+                    stream="position"
+                    keyLabel={streamKeyLabel('position')}
+                    active={gate.position}
+                    correct={correctStreams.has('position')}
+                    wrong={wrongStreams.has('position')}
+                    onPress={() => handleStreamPress('position')}
+                    disabled={!interactive}
+                  />
+                </>
+              )}
             </div>
 
             <div className="qb-keys-right">
-              <QuadBoxKey
-                stream="shape"
-                keyLabel={streamKeyLabel('shape')}
-                active={gate.shape}
-                correct={correctStreams.has('shape')}
-                wrong={wrongStreams.has('shape')}
-                onPress={() => handleStreamPress('shape')}
-                disabled={!interactive}
-              />
-              <QuadBoxKey
-                stream="letter"
-                keyLabel={streamKeyLabel('letter')}
-                active={gate.letter}
-                correct={correctStreams.has('letter')}
-                wrong={wrongStreams.has('letter')}
-                onPress={() => handleStreamPress('letter')}
-                disabled={!interactive}
-              />
+              {settings.gameMode === '2g' && active2GPair ? (
+                <QuadBoxKey
+                  stream={active2GPair.audio}
+                  keyLabel={streamKeyLabel(active2GPair.audio)}
+                  active
+                  correct={correctStreams.has(active2GPair.audio)}
+                  wrong={wrongStreams.has(active2GPair.audio)}
+                  onPress={() => handleStreamPress(active2GPair.audio)}
+                  disabled={!interactive}
+                  labelOverride={get2GAudioLabel(gate)}
+                />
+              ) : (
+                <>
+                  <QuadBoxKey
+                    stream="shape"
+                    keyLabel={streamKeyLabel('shape')}
+                    active={gate.shape}
+                    correct={correctStreams.has('shape')}
+                    wrong={wrongStreams.has('shape')}
+                    onPress={() => handleStreamPress('shape')}
+                    disabled={!interactive}
+                  />
+                  <QuadBoxKey
+                    stream="letter"
+                    keyLabel={streamKeyLabel('letter')}
+                    active={gate.letter}
+                    correct={correctStreams.has('letter')}
+                    wrong={wrongStreams.has('letter')}
+                    onPress={() => handleStreamPress('letter')}
+                    disabled={!interactive}
+                  />
+                </>
+              )}
             </div>
 
             {settings.gridMode === '2d' && (
@@ -290,6 +338,8 @@ export function QuadLayout({
                   outputGate={trial?.outputGate ?? 'or'}
                   showGate={settings.gameMode === '2g' && !showIdle}
                   trialIndex={isPlaying ? trialIndex : 0}
+                  stimulusVisible={stimulusVisible}
+                  gridMode={settings.gridMode}
                 />
               </div>
             )}
@@ -318,6 +368,12 @@ export function QuadLayout({
         <footer className="px-4 py-1 text-center text-[10px] text-white/20 shrink-0 z-20 space-y-0.5">
           <div>
             Trial {playedIndex + 1} / {totalTrials}
+            {settings.gameMode === '2g' && blockNumber && totalBlocks && (
+              <span className="text-white/30">
+                {' '}
+                · Block {blockNumber}/{totalBlocks}
+              </span>
+            )}
             {settings.gameMode === '2g' && settings.variableTiming && trial?.intervalMs && (
               <span className="text-white/30"> · {trial.intervalMs}ms</span>
             )}
@@ -343,11 +399,11 @@ export function QuadLayout({
                 <p className="text-white/50 text-xs">Accuracy</p>
                 <p className="text-2xl font-bold">{Math.round(stats.accuracy * 100)}%</p>
               </div>
-              {(['position', 'letter', 'color', 'shape'] as Stream[]).map((stream) => {
+              {resultStreams.map((stream) => {
                 const used = stats.usedStreams.includes(stream)
                 return (
                   <div key={stream} className="p-3 rounded bg-white/5">
-                    <p className="text-white/50 text-xs">{STREAM_LABELS[stream]}</p>
+                    <p className="text-white/50 text-xs">{streamLabelForResults(stream)}</p>
                     <p>{used ? `${stats.streamScores[stream]}%` : '—'}</p>
                   </div>
                 )

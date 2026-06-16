@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { GAME_MODE_LABELS, TWO_G_INTERVAL_PRESETS } from '../lib/constants'
+import { GAME_MODE_LABELS, TWO_G_DEFAULT_SETTINGS, TWO_G_INTERVAL_PRESETS } from '../lib/constants'
 import { getEnglishVoices, resumeAudio } from '../lib/audio'
 import type { GameMode, GameSettings } from '../types/game'
 
@@ -100,12 +100,7 @@ export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onTogg
     onUpdate({
       gameMode: next,
       ...(next === '2g'
-        ? {
-            enableInputGating: true,
-            responseMode: 'per-stream' as const,
-            outputGateMode: 'random' as const,
-            trialCount: 20,
-          }
+        ? TWO_G_DEFAULT_SETTINGS
         : {
             enableInputGating: false,
             responseMode: 'per-stream' as const,

@@ -48,12 +48,7 @@ export function TutorialLayout({ game, tutorial, onExit, onStartTraining }: Tuto
     view === 'info' && step.demoStimulus
       ? {
           stimulus: step.demoStimulus,
-          inputGate: step.demoInputGate ?? {
-            position: true,
-            letter: true,
-            color: true,
-            shape: true,
-          },
+          inputGate: step.demoInputGate ?? createIdleGate(),
           outputGate: step.demoOutputGate ?? ('or' as const),
         }
       : view === 'practice'

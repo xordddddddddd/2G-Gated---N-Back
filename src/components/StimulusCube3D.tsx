@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { COLORS } from '../lib/constants'
+import { COLORS, LIME_MARKER_HEX, ORANGE_MARKER_HEX } from '../lib/constants'
 import {
   getRotationStart,
   indexToPositionKey,
@@ -22,6 +22,7 @@ interface StimulusCube3DProps {
   showGate?: boolean
   gridMode?: GridMode
   trialIndex?: number
+  stimulusVisible?: boolean
 }
 
 function getCubeAppearance(
@@ -61,13 +62,20 @@ export function StimulusCube3D({
   showGate = false,
   gridMode = '3d',
   trialIndex = 0,
+  stimulusVisible = true,
 }: StimulusCube3DProps) {
   const rotationStart = useMemo(() => getRotationStart(), [])
   const durationSec = rotationDurationSec(rotationSpeed)
+  const showStimulus = !idle && stimulusVisible
+  const is2G = gameMode === '2g'
+
   const displayIndex = toDisplayPosition(stimulus.position, gridMode)
   const positionKey = indexToPositionKey(displayIndex)
+  const orangeDisplayIndex = toDisplayPosition(stimulus.orangePosition, gridMode)
+  const orangePositionKey = indexToPositionKey(orangeDisplayIndex)
+
   const showCell =
-    !idle && (inputGate.position || inputGate.color || inputGate.shape)
+    showStimulus && !is2G && (inputGate.position || inputGate.color || inputGate.shape)
   const highlightPosition = showCell && inputGate.position
   const appearance = getCubeAppearance(stimulus, inputGate, gameMode, Boolean(highlightPosition))
 
@@ -89,6 +97,23 @@ export function StimulusCube3D({
           } as React.CSSProperties
         }
       >
+        {showStimulus && is2G && (
+          <>
+            <GridCell3D
+              key={`lime-${trialIndex}`}
+              positionKey={positionKey}
+              faceColor={LIME_MARKER_HEX}
+              className="grid3d-stimulus-pulse"
+            />
+            <GridCell3D
+              key={`orange-${trialIndex}`}
+              positionKey={orangePositionKey}
+              faceColor={ORANGE_MARKER_HEX}
+              className="grid3d-stimulus-pulse"
+            />
+          </>
+        )}
+
         {showCell && (
           <GridCell3D
             key={trialIndex}

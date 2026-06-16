@@ -1,4 +1,10 @@
-export type Stream = 'position' | 'letter' | 'color' | 'shape'
+export type Stream =
+  | 'position'
+  | 'orangePosition'
+  | 'letter'
+  | 'number'
+  | 'color'
+  | 'shape'
 
 export type OutputGate = 'or' | 'and' | 'xor'
 
@@ -23,15 +29,21 @@ export type ShapeMode = 'all' | 'basic'
 export type GridMode = '2d' | '3d'
 
 export interface Stimulus {
+  /** Lime (green) spatial marker in 2G mode. */
   position: number
+  /** Orange spatial marker in 2G mode. */
+  orangePosition: number
   letter: string
+  number: string
   color: string
   shape: string
 }
 
 export interface InputGate {
   position: boolean
+  orangePosition: boolean
   letter: boolean
+  number: boolean
   color: boolean
   shape: boolean
 }
@@ -48,14 +60,18 @@ export interface Trial {
 
 export interface StreamKeys {
   position: string
+  orangePosition: string
+  letter: string
+  number: string
   color: string
   shape: string
-  letter: string
 }
 
 export interface StreamScores {
   position: number
+  orangePosition: number
   letter: number
+  number: number
   color: number
   shape: number
 }

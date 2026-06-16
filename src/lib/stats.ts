@@ -1,9 +1,19 @@
+import { TWO_G_ADAPTIVE_DOWN_PCT, TWO_G_ADAPTIVE_UP_PCT } from './constants'
 import { emptyStreamScores } from './history'
-import type { SessionStats, Stream, StreamScores, TrialResult } from '../types/game'
+import type { GameMode, SessionStats, Stream, StreamScores, TrialResult } from '../types/game'
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
+
+const ALL_STREAM_ORDER: Stream[] = [
+  'position',
+  'orangePosition',
+  'letter',
+  'number',
+  'color',
+  'shape',
+]
 
 export function getUsedStreamsFromResults(results: TrialResult[]): Stream[] {
   const used = new Set<Stream>()
@@ -12,7 +22,7 @@ export function getUsedStreamsFromResults(results: TrialResult[]): Stream[] {
       used.add(stream)
     }
   }
-  return ['position', 'letter', 'color', 'shape'].filter((s) => used.has(s as Stream)) as Stream[]
+  return ALL_STREAM_ORDER.filter((s) => used.has(s))
 }
 
 export function averageStreamScores(
@@ -25,8 +35,22 @@ export function averageStreamScores(
 }
 
 function computeStreamScores(results: TrialResult[]): StreamScores {
-  const totals: Record<Stream, number> = { position: 0, letter: 0, color: 0, shape: 0 }
-  const correct: Record<Stream, number> = { position: 0, letter: 0, color: 0, shape: 0 }
+  const totals: Record<Stream, number> = {
+    position: 0,
+    orangePosition: 0,
+    letter: 0,
+    number: 0,
+    color: 0,
+    shape: 0,
+  }
+  const correct: Record<Stream, number> = {
+    position: 0,
+    orangePosition: 0,
+    letter: 0,
+    number: 0,
+    color: 0,
+    shape: 0,
+  }
 
   for (const result of results) {
     for (const stream of result.activeStreams) {
@@ -37,7 +61,11 @@ function computeStreamScores(results: TrialResult[]): StreamScores {
 
   return {
     position: totals.position ? Math.round((correct.position / totals.position) * 100) : 0,
+    orangePosition: totals.orangePosition
+      ? Math.round((correct.orangePosition / totals.orangePosition) * 100)
+      : 0,
     letter: totals.letter ? Math.round((correct.letter / totals.letter) * 100) : 0,
+    number: totals.number ? Math.round((correct.number / totals.number) * 100) : 0,
     color: totals.color ? Math.round((correct.color / totals.color) * 100) : 0,
     shape: totals.shape ? Math.round((correct.shape / totals.shape) * 100) : 0,
   }
@@ -64,6 +92,15 @@ export function computeStats(results: TrialResult[]): SessionStats {
         ? Math.round(((hits + correctRejects) / total) * 100)
         : 0
 
+  const hasStreamScores =
+    streamScores.position +
+      streamScores.orangePosition +
+      streamScores.letter +
+      streamScores.number +
+      streamScores.color +
+      streamScores.shape >
+    0
+
   return {
     hits,
     misses,
@@ -71,9 +108,7 @@ export function computeStats(results: TrialResult[]): SessionStats {
     correctRejects,
     accuracy: total > 0 ? (hits + correctRejects) / total : 0,
     dPrime: zHit - zFa,
-    streamScores: streamScores.position + streamScores.letter + streamScores.color + streamScores.shape > 0
-      ? streamScores
-      : { ...emptyStreamScores(), position: avgStream },
+    streamScores: hasStreamScores ? streamScores : { ...emptyStreamScores(), position: avgStream },
     usedStreams,
   }
 }
@@ -130,13 +165,16 @@ function inverseNormalCDF(p: number): number {
   )
 }
 
-export function suggestNLevel(stats: SessionStats, current: number): number {
-  const used = stats.usedStreams.length > 0 ? stats.usedStreams : (['position', 'letter', 'color', 'shape'] as Stream[])
+export function suggestNLevel(stats: SessionStats, current: number, gameMode?: GameMode): number {
+  const used = stats.usedStreams.length > 0 ? stats.usedStreams : ALL_STREAM_ORDER
   const avg = averageStreamScores(stats.streamScores, used)
-  if (avg >= 80 && stats.dPrime >= 1.5) {
+  const upThreshold = gameMode === '2g' ? TWO_G_ADAPTIVE_UP_PCT : 80
+  const downThreshold = gameMode === '2g' ? TWO_G_ADAPTIVE_DOWN_PCT : 55
+
+  if (avg >= upThreshold && stats.dPrime >= 1.5) {
     return Math.min(current + 1, 9)
   }
-  if (avg < 55 || stats.dPrime < 0.5) {
+  if (avg < downThreshold || stats.dPrime < 0.5) {
     return Math.max(current - 1, 1)
   }
   return current

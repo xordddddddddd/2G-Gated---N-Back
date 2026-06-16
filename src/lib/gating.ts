@@ -3,7 +3,9 @@ import type { InputGate, OutputGate, Stimulus, Stream } from '../types/game'
 export function getActiveStreams(gate: InputGate): Stream[] {
   const streams: Stream[] = []
   if (gate.position) streams.push('position')
+  if (gate.orangePosition) streams.push('orangePosition')
   if (gate.letter) streams.push('letter')
+  if (gate.number) streams.push('number')
   if (gate.color) streams.push('color')
   if (gate.shape) streams.push('shape')
   return streams
@@ -17,8 +19,12 @@ export function streamMatches(
   switch (stream) {
     case 'position':
       return current.position === past.position
+    case 'orangePosition':
+      return current.orangePosition === past.orangePosition
     case 'letter':
       return current.letter === past.letter
+    case 'number':
+      return current.number === past.number
     case 'color':
       return current.color === past.color
     case 'shape':
@@ -33,7 +39,9 @@ export function getStreamMatches(
 ): Record<Stream, boolean> {
   return {
     position: gate.position && streamMatches('position', current, past),
+    orangePosition: gate.orangePosition && streamMatches('orangePosition', current, past),
     letter: gate.letter && streamMatches('letter', current, past),
+    number: gate.number && streamMatches('number', current, past),
     color: gate.color && streamMatches('color', current, past),
     shape: gate.shape && streamMatches('shape', current, past),
   }
@@ -60,4 +68,3 @@ export function shouldRespond(
       return matchCount === 1
   }
 }
-

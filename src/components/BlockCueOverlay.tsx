@@ -1,4 +1,4 @@
-import { OUTPUT_GATE_LABELS, get2GActivePairLabel } from '../lib/constants'
+import { OUTPUT_GATE_LABELS, TWO_G_SESSION_BLOCKS, get2GActivePairLabel } from '../lib/constants'
 import { format2GKeyMapping } from '../lib/twoG'
 import type { GameSettings, InputGate, OutputGate } from '../types/game'
 
@@ -28,7 +28,9 @@ export function BlockCueOverlay({
   return (
     <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/85 p-4">
       <div className="w-full max-w-md rounded border border-white/25 bg-[#111] p-6 space-y-4 text-center">
-        <p className="text-[11px] uppercase tracking-[0.25em] text-white/40">Block {blockNumber}</p>
+        <p className="text-[11px] uppercase tracking-[0.25em] text-white/40">
+          Block {blockNumber} / {TWO_G_SESSION_BLOCKS}
+        </p>
         <h2 className="text-xl font-serif">2G Block Start</h2>
         <div className="space-y-2 text-sm text-white/70">
           <p>

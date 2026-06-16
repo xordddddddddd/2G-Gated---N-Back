@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { resumeAudio, setVoicePreference, speakLetter, stopSpeech } from '../lib/audio'
+import { resumeAudio, setVoicePreference, speakLetter, speakNumber, stopSpeech } from '../lib/audio'
 import {
+  get2GBlockIndex,
   get2GBlockLength,
   get2GPlayedIndex,
+  get2GSessionScorableTrials,
   is2GBlockStart,
   is2GTrialScorable,
+  TWO_G_SESSION_BLOCKS,
+  TWO_G_STIMULUS_VISIBLE_MS,
 } from '../lib/constants'
 import { getGameLabel } from '../lib/constants'
 import { shouldRespond, getActiveStreams } from '../lib/gating'
@@ -36,7 +40,7 @@ import type {
 function buildStreamCorrect(
   pressed: Set<Stream>,
   streamMatchesMap: Record<Stream, boolean>,
-  gate: { position: boolean; letter: boolean; color: boolean; shape: boolean },
+  gate: InputGate,
 ): Partial<Record<Stream, boolean>> {
   const result: Partial<Record<Stream, boolean>> = {}
   for (const stream of getActiveStreams(gate)) {
@@ -78,7 +82,7 @@ function getCorrectStreams(
 function get2GGlowStreams(
   pressed: Set<Stream>,
   streamMatchesMap: Record<Stream, boolean>,
-  gate: { position: boolean; letter: boolean; color: boolean; shape: boolean },
+  gate: InputGate,
   outputGate: OutputGate,
 ): { correct: Set<Stream>; wrong: Set<Stream> } {
   const expected = getExpectedPressedStreams(streamMatchesMap, gate, outputGate)
@@ -114,6 +118,7 @@ export function useGame() {
     keysSwapped: boolean
   } | null>(null)
   const [awaitingBlockCue, setAwaitingBlockCue] = useState(false)
+  const [stimulusVisible, setStimulusVisible] = useState(true)
   const [stats, setStats] = useState<SessionStats | null>(null)
   const [suggestedN, setSuggestedN] = useState(settings.nLevel)
   const [todayPlayMs, setTodayPlayMs] = useState(() => getTodayPlayTimeMs())
@@ -123,6 +128,7 @@ export function useGame() {
   const stopTrialClockRef = useRef<(() => void) | null>(null)
   const trialClockIdRef = useRef(0)
   const speakTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hideStimulusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sessionStartRef = useRef<number | null>(null)
   const cancelledRef = useRef(false)
   const pressedStreamsRef = useRef(pressedStreams)
@@ -140,11 +146,14 @@ export function useGame() {
     settings.gameMode === '2g'
       ? is2GTrialScorable(trialIndex, nLevel)
       : trialIndex >= nLevel
-  const playedTrials = settings.trialCount
+  const playedTrials =
+    settings.gameMode === '2g' ? get2GSessionScorableTrials() : settings.trialCount
   const playedIndex =
     settings.gameMode === '2g'
       ? get2GPlayedIndex(trialIndex, nLevel)
       : Math.max(trialIndex - nLevel, 0)
+  const blockNumber =
+    settings.gameMode === '2g' ? get2GBlockIndex(trialIndex, nLevel) + 1 : null
   const trialsRemaining = Math.max(playedTrials - playedIndex - 1, 0)
   const isPlaying = phase === 'playing'
 
@@ -156,6 +165,10 @@ export function useGame() {
     if (speakTimeoutRef.current) {
       clearTimeout(speakTimeoutRef.current)
       speakTimeoutRef.current = null
+    }
+    if (hideStimulusTimeoutRef.current) {
+      clearTimeout(hideStimulusTimeoutRef.current)
+      hideStimulusTimeoutRef.current = null
     }
     stopSpeech()
   }, [])
@@ -449,7 +462,7 @@ export function useGame() {
             }
 
             if (settings.adaptive) {
-              setSuggestedN(suggestNLevel(sessionStats, settings.nLevel))
+              setSuggestedN(suggestNLevel(sessionStats, settings.nLevel, settings.gameMode))
             }
           }
         }
@@ -462,8 +475,9 @@ export function useGame() {
       pressedStreamsRef.current = new Set()
       setPressedStreams(new Set())
       setWrongStreams(new Set())
-      setCorrectStreams(new Set())
-      setBlockCue(null)
+    setCorrectStreams(new Set())
+    setStimulusVisible(true)
+    setBlockCue(null)
       setAwaitingBlockCue(false)
       if (cancelled) {
         setTrials([])
@@ -620,10 +634,27 @@ export function useGame() {
         ? is2GTrialScorable(trialIndex, settings.nLevel)
         : trialIndex >= settings.nLevel
     const trialMs = trial.intervalMs ?? settings.intervalMs
+    const visibleMs =
+      settings.gameMode === '2g' ? TWO_G_STIMULUS_VISIBLE_MS : trialMs
 
-    if (trial.inputGate.letter && settings.soundEnabled) {
-      speakLetter(trial.stimulus.letter, true)
-      speakTimeoutRef.current = setTimeout(() => {}, 900)
+    setStimulusVisible(true)
+    if (hideStimulusTimeoutRef.current) {
+      clearTimeout(hideStimulusTimeoutRef.current)
+    }
+    hideStimulusTimeoutRef.current = setTimeout(() => {
+      if (settings.gameMode === '2g') setStimulusVisible(false)
+    }, visibleMs)
+
+    if (settings.soundEnabled) {
+      if (settings.gameMode === '2g') {
+        speakLetter(trial.stimulus.letter, true)
+        speakTimeoutRef.current = setTimeout(() => {
+          speakNumber(trial.stimulus.number, true)
+        }, 420)
+      } else if (trial.inputGate.letter) {
+        speakLetter(trial.stimulus.letter, true)
+        speakTimeoutRef.current = setTimeout(() => {}, 900)
+      }
     }
 
     stopTrialClockRef.current?.()
@@ -651,6 +682,10 @@ export function useGame() {
       if (speakTimeoutRef.current) {
         clearTimeout(speakTimeoutRef.current)
         speakTimeoutRef.current = null
+      }
+      if (hideStimulusTimeoutRef.current) {
+        clearTimeout(hideStimulusTimeoutRef.current)
+        hideStimulusTimeoutRef.current = null
       }
       stopSpeech()
     }
@@ -727,6 +762,9 @@ export function useGame() {
     correctStreams,
     blockCue,
     awaitingBlockCue,
+    stimulusVisible,
+    blockNumber,
+    totalBlocks: settings.gameMode === '2g' ? TWO_G_SESSION_BLOCKS : null,
     handlePlay,
     startSession,
     stopSession,

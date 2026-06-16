@@ -9,6 +9,17 @@ const LETTER_FREQUENCIES: Record<string, number> = {
   T: 523.25,
 }
 
+const NUMBER_FREQUENCIES: Record<string, number> = {
+  '1': 277.18,
+  '2': 311.13,
+  '3': 349.23,
+  '4': 392.0,
+  '5': 440.0,
+  '6': 493.88,
+  '7': 523.25,
+  '8': 587.33,
+}
+
 const LETTER_SPOKEN: Record<string, string> = {
   C: 'C',
   H: 'H',
@@ -131,6 +142,23 @@ function playLetterTone(letter: string): void {
   osc.stop(ctx.currentTime + 0.45)
 }
 
+function playNumberTone(number: string): void {
+  const frequency = NUMBER_FREQUENCIES[number]
+  if (!frequency) return
+  const ctx = getContext()
+  const osc = ctx.createOscillator()
+  const gain = ctx.createGain()
+  osc.type = 'triangle'
+  osc.frequency.value = frequency
+  gain.gain.setValueAtTime(0.0001, ctx.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.28, ctx.currentTime + 0.02)
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4)
+  osc.connect(gain)
+  gain.connect(ctx.destination)
+  osc.start()
+  osc.stop(ctx.currentTime + 0.45)
+}
+
 export function speakLetter(letter: string, enabled = true): void {
   if (!enabled || !letter) return
   const spoken = LETTER_SPOKEN[letter] ?? letter
@@ -148,6 +176,24 @@ export function speakLetter(letter: string, enabled = true): void {
     return
   }
   playLetterTone(letter)
+}
+
+export function speakNumber(number: string, enabled = true): void {
+  if (!enabled || !number) return
+
+  if ('speechSynthesis' in window) {
+    ensureVoices()
+    window.speechSynthesis.cancel()
+    const u = new SpeechSynthesisUtterance(number)
+    u.rate = 0.82
+    u.pitch = 1.05
+    u.volume = 1
+    if (activeVoice) u.voice = activeVoice
+    u.onerror = () => playNumberTone(number)
+    window.speechSynthesis.speak(u)
+    return
+  }
+  playNumberTone(number)
 }
 
 export function stopSpeech(): void {
