@@ -30,6 +30,7 @@ export function QuadLayout({
   phase,
   settings,
   currentTrial,
+  trialIndex,
   playedIndex,
   totalTrials,
   trialsRemaining,
@@ -210,6 +211,7 @@ export function QuadLayout({
               gridMode={settings.gridMode}
               outputGate={trial?.outputGate ?? 'or'}
               showGate={settings.gameMode === '2g' && !showIdle}
+              trialIndex={isPlaying ? trialIndex : 0}
             />
           )}
 
@@ -287,6 +289,7 @@ export function QuadLayout({
                   gameMode={settings.gameMode}
                   outputGate={trial?.outputGate ?? 'or'}
                   showGate={settings.gameMode === '2g' && !showIdle}
+                  trialIndex={isPlaying ? trialIndex : 0}
                 />
               </div>
             )}

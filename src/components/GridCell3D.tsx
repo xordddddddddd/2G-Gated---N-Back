@@ -6,6 +6,7 @@ interface GridCell3DProps {
   faceColor: string
   shapeId?: string
   shapeColor?: string
+  className?: string
 }
 
 const FACE_CLASSES = [
@@ -22,6 +23,7 @@ export function GridCell3D({
   faceColor,
   shapeId,
   shapeColor = '#1a1a1a',
+  className = '',
 }: GridCell3DProps) {
   const faceStyle: CSSProperties = {
     backgroundColor: faceColor,
@@ -29,7 +31,7 @@ export function GridCell3D({
   }
 
   return (
-    <div className={`grid3d-cell p${positionKey}`}>
+    <div className={`grid3d-cell p${positionKey} ${className}`.trim()}>
       {FACE_CLASSES.map((faceClass) => (
         <div key={faceClass} className={`grid3d-face ${faceClass}`} style={faceStyle} />
       ))}

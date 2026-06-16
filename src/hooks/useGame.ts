@@ -129,6 +129,7 @@ export function useGame() {
   const respondedThisTrialRef = useRef(respondedThisTrial)
   const finishTrialRef = useRef<() => void>(() => {})
   const advanceTrialRef = useRef<() => void>(() => {})
+  const instantFeedbackRef = useRef(false)
 
   pressedStreamsRef.current = pressedStreams
   respondedThisTrialRef.current = respondedThisTrial
@@ -281,7 +282,7 @@ export function useGame() {
 
     if (settings.feedbackMode === 'hide') {
       setFeedback(null)
-    } else {
+    } else if (trialFeedback === 'miss' || !instantFeedbackRef.current) {
       setFeedback(trialFeedback)
     }
 
@@ -303,6 +304,65 @@ export function useGame() {
     setResults((prev) => [...prev, trialResult])
   }, [currentTrial, isScorable, trials, trialIndex, nLevel, settings])
 
+  const applyInstantPressFeedback = useCallback(
+    (pressed: Set<Stream>) => {
+      if (!currentTrial || !isScorable) return
+      const past = trials[trialIndex - nLevel]
+      if (!past) return
+
+      const streamMatchesMap = getStreamMatchesForTrial(
+        currentTrial.stimulus,
+        past.stimulus,
+        currentTrial.inputGate,
+      )
+      const gate = currentTrial.inputGate
+
+      if (settings.gameMode === '2g') {
+        const result = evaluate2GResponse(
+          pressed,
+          streamMatchesMap,
+          gate,
+          currentTrial.outputGate,
+        )
+        const glow = get2GGlowStreams(
+          pressed,
+          streamMatchesMap,
+          gate,
+          currentTrial.outputGate,
+        )
+        setCorrectStreams(glow.correct)
+        setWrongStreams(glow.wrong)
+        if (result.feedback === 'hit' || result.feedback === 'false-alarm') {
+          if (settings.feedbackMode !== 'hide') setFeedback(result.feedback)
+          instantFeedbackRef.current = true
+        }
+        return
+      }
+
+      let anyWrong = false
+      let anyCorrect = false
+      for (const stream of pressed) {
+        if (!gate[stream]) continue
+        if (streamMatchesMap[stream]) {
+          anyCorrect = true
+        } else {
+          anyWrong = true
+        }
+      }
+
+      if (anyWrong) {
+        setWrongStreams(getWrongStreams(streamMatchesMap, pressed, getActiveStreams(gate)))
+        if (settings.feedbackMode !== 'hide') setFeedback('false-alarm')
+        instantFeedbackRef.current = true
+      } else if (anyCorrect) {
+        setCorrectStreams(getCorrectStreams(streamMatchesMap, pressed, getActiveStreams(gate)))
+        if (settings.feedbackMode !== 'hide') setFeedback('hit')
+        instantFeedbackRef.current = true
+      }
+    },
+    [currentTrial, isScorable, trials, trialIndex, nLevel, settings.gameMode, settings.feedbackMode],
+  )
+
   const handleStreamPress = useCallback(
     (stream: Stream) => {
       if (
@@ -318,10 +378,11 @@ export function useGame() {
       setPressedStreams((prev) => {
         const next = new Set(prev).add(stream)
         pressedStreamsRef.current = next
+        applyInstantPressFeedback(next)
         return next
       })
     },
-    [currentTrial, isScorable, phase, awaitingBlockCue],
+    [currentTrial, isScorable, phase, awaitingBlockCue, applyInstantPressFeedback],
   )
 
   const endSession = useCallback(
@@ -416,6 +477,7 @@ export function useGame() {
     setFeedback(null)
     setRespondedThisTrial(false)
     respondedThisTrialRef.current = false
+    instantFeedbackRef.current = false
     pressedStreamsRef.current = new Set()
     setPressedStreams(new Set())
     setWrongStreams(new Set())
@@ -462,6 +524,7 @@ export function useGame() {
     setFeedback(null)
     setRespondedThisTrial(false)
     respondedThisTrialRef.current = false
+    instantFeedbackRef.current = false
     pressedStreamsRef.current = new Set()
     setPressedStreams(new Set())
     setWrongStreams(new Set())

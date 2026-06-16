@@ -12,6 +12,7 @@ interface StimulusGridProps {
   gameMode?: GameMode
   outputGate?: OutputGate
   showGate?: boolean
+  trialIndex?: number
 }
 
 function shapeFillColor(
@@ -34,6 +35,7 @@ export function StimulusGrid({
   gameMode = 'quad',
   outputGate = 'or',
   showGate = false,
+  trialIndex = 0,
 }: StimulusGridProps) {
   const color = COLORS.find((c) => c.id === stimulus.color) ?? COLORS[0]
   const cells = Array.from({ length: 9 }, (_, i) => i)
@@ -79,10 +81,17 @@ export function StimulusGrid({
               <GateCellContent outputGate={outputGate} visible={showGate} />
             )}
             {highlightPosition && (
-              <div className="absolute inset-0 bg-white z-[1]" aria-hidden />
+              <div
+                key={`hl-${trialIndex}`}
+                className="absolute inset-0 bg-white z-[1] stimulus-cell-pulse"
+                aria-hidden
+              />
             )}
             {isActive && showColorDot && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[2]">
+              <div
+                key={`color-${trialIndex}`}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none z-[2] stimulus-cell-pulse"
+              >
                 <div
                   className="rounded-full"
                   style={{
@@ -94,7 +103,10 @@ export function StimulusGrid({
               </div>
             )}
             {isActive && showShape && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[2]">
+              <div
+                key={`shape-${trialIndex}`}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none z-[2] stimulus-cell-pulse"
+              >
                 <ShapeIcon shapeId={stimulus.shape} color={shapeColor} size={shapeSize} />
                 {showColorShape && (
                   <div

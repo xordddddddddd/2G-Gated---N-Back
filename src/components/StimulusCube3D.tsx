@@ -21,6 +21,7 @@ interface StimulusCube3DProps {
   outputGate?: OutputGate
   showGate?: boolean
   gridMode?: GridMode
+  trialIndex?: number
 }
 
 function getCubeAppearance(
@@ -59,6 +60,7 @@ export function StimulusCube3D({
   outputGate = 'or',
   showGate = false,
   gridMode = '3d',
+  trialIndex = 0,
 }: StimulusCube3DProps) {
   const rotationStart = useMemo(() => getRotationStart(), [])
   const durationSec = rotationDurationSec(rotationSpeed)
@@ -89,10 +91,12 @@ export function StimulusCube3D({
       >
         {showCell && (
           <GridCell3D
+            key={trialIndex}
             positionKey={positionKey}
             faceColor={appearance.faceColor}
             shapeId={appearance.shapeId}
             shapeColor={appearance.shapeColor}
+            className="grid3d-stimulus-pulse"
           />
         )}
 
