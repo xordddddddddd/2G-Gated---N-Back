@@ -473,7 +473,7 @@ export function useGame() {
             }
 
             if (settings.adaptive) {
-              setSuggestedN(suggestNLevel(sessionStats, settings.nLevel, settings.gameMode))
+              setSuggestedN(suggestNLevel(sessionStats, settings.nLevel))
             }
           }
         }

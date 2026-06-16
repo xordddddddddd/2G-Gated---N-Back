@@ -153,8 +153,6 @@ export const TWO_G_INPUT_PAIRS: InputGate[] = [
 export const TWO_G_BLOCK_SCORABLE_TRIALS = 20
 export const TWO_G_SESSION_BLOCKS = 10
 export const TWO_G_STIMULUS_VISIBLE_MS = 500
-export const TWO_G_ADAPTIVE_UP_PCT = 90
-export const TWO_G_ADAPTIVE_DOWN_PCT = 70
 
 export function getStreamsForMode(gameMode: GameMode): Stream[] {
   return gameMode === '2g' || gameMode === '2g+' ? TWO_G_STREAMS : QUAD_STREAMS
@@ -245,9 +243,6 @@ export const TWO_G_DEFAULT_SETTINGS: Partial<GameSettings> = {
   interference: 0.2,
   responseSwitching: true,
   variableTiming: true,
-  autoProgression: true,
-  autoProgressionThreshold: TWO_G_ADAPTIVE_UP_PCT / 100,
-  autoProgressionLoseThreshold: TWO_G_ADAPTIVE_DOWN_PCT / 100,
   adaptive: true,
   keys: {
     position: 'f',
