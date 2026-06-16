@@ -168,8 +168,8 @@ function inverseNormalCDF(p: number): number {
 export function suggestNLevel(stats: SessionStats, current: number, gameMode?: GameMode): number {
   const used = stats.usedStreams.length > 0 ? stats.usedStreams : ALL_STREAM_ORDER
   const avg = averageStreamScores(stats.streamScores, used)
-  const upThreshold = gameMode === '2g' ? TWO_G_ADAPTIVE_UP_PCT : 80
-  const downThreshold = gameMode === '2g' ? TWO_G_ADAPTIVE_DOWN_PCT : 55
+  const upThreshold = gameMode === '2g' || gameMode === '2g+' ? TWO_G_ADAPTIVE_UP_PCT : 80
+  const downThreshold = gameMode === '2g' || gameMode === '2g+' ? TWO_G_ADAPTIVE_DOWN_PCT : 55
 
   if (avg >= upThreshold && stats.dPrime >= 1.5) {
     return Math.min(current + 1, 9)

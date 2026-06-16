@@ -1,21 +1,19 @@
-import { TWO_G_STREAM_LABELS, VARIABLE_INTERVAL_MAX_MS, VARIABLE_INTERVAL_MIN_MS } from './constants'
+import { VARIABLE_INTERVAL_MAX_MS, VARIABLE_INTERVAL_MIN_MS } from './constants'
+import { getActiveStreams } from './gating'
+import { getGatedActivePair, getGatedSecondaryLabel, getGatedSpatialLabel } from './twoGPlus'
 import { getKeyForStream, streamFromKey } from './response'
-import type { InputGate, Stream, StreamKeys } from '../types/game'
+import type { HorizontalTask, InputGate, Stream, StreamKeys } from '../types/game'
 
 export function get2GPairStreams(gate: InputGate): [Stream, Stream] | null {
-  if (gate.position && gate.letter && !gate.orangePosition && !gate.number) {
-    return ['position', 'letter']
-  }
-  if (gate.orangePosition && gate.number && !gate.position && !gate.letter) {
-    return ['orangePosition', 'number']
-  }
-  return null
+  const pair = getGatedActivePair(gate)
+  if (!pair) return null
+  return [pair.spatial, pair.secondary]
 }
 
 export function get2GActivePair(gate: InputGate): { spatial: Stream; audio: Stream } | null {
-  const pair = get2GPairStreams(gate)
+  const pair = getGatedActivePair(gate)
   if (!pair) return null
-  return { spatial: pair[0], audio: pair[1] }
+  return { spatial: pair.spatial, audio: pair.secondary }
 }
 
 export function pickVariableIntervalMs(): number {
@@ -46,11 +44,11 @@ export function streamFromKeyFor2G(
 ): Stream | null {
   const pair = get2GPairStreams(gate)
   if (!pair || !swapped) {
-    const active = get2GActivePair(gate)
+    const active = getGatedActivePair(gate)
     if (!active) return streamFromKey(key, keys)
     const normalized = key.toLowerCase()
     if (keys[active.spatial].toLowerCase() === normalized) return active.spatial
-    if (keys[active.audio].toLowerCase() === normalized) return active.audio
+    if (keys[active.secondary].toLowerCase() === normalized) return active.secondary
     return null
   }
 
@@ -70,22 +68,29 @@ export function format2GKeyMapping(
   keys: StreamKeys,
   swapped: boolean,
 ): string {
-  const pair = get2GActivePair(gate)
+  const pair = getGatedActivePair(gate)
   if (!pair) return ''
 
   const spatialKey = getDisplayKeyForStream(pair.spatial, keys, gate, swapped)
-  const audioKey = getDisplayKeyForStream(pair.audio, keys, gate, swapped)
-  return `${spatialKey}=Spatial · ${audioKey}=Audio`
+  const secondaryKey = getDisplayKeyForStream(pair.secondary, keys, gate, swapped)
+  return `${spatialKey}=Spatial · ${secondaryKey}=Secondary`
 }
 
 export function get2GSpatialLabel(gate: InputGate): string {
-  const pair = get2GActivePair(gate)
-  if (!pair) return 'Spatial'
-  return TWO_G_STREAM_LABELS[pair.spatial]
+  return getGatedSpatialLabel(gate)
 }
 
-export function get2GAudioLabel(gate: InputGate): string {
-  const pair = get2GActivePair(gate)
-  if (!pair) return 'Audio'
-  return TWO_G_STREAM_LABELS[pair.audio]
+export function get2GAudioLabel(gate: InputGate, horizontalTask?: HorizontalTask): string {
+  return getGatedSecondaryLabel(gate, horizontalTask)
+}
+
+export function getActiveStreamLabels(gate: InputGate, horizontalTask?: HorizontalTask): string {
+  const active = getActiveStreams(gate)
+  if (active.length === 0) return '—'
+  return active
+    .map((stream) => {
+      if (stream === getGatedActivePair(gate)?.spatial) return getGatedSpatialLabel(gate)
+      return getGatedSecondaryLabel(gate, horizontalTask)
+    })
+    .join(' + ')
 }

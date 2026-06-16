@@ -41,7 +41,18 @@ const stim = (
   shape: string,
   orangePosition = 0,
   number = '1',
-): Stimulus => ({ position, orangePosition, letter, number, color, shape })
+): Stimulus => ({
+  position,
+  orangePosition,
+  letter,
+  number,
+  color,
+  shape,
+  stroopWord: 'RED',
+  stroopInk: 'blue',
+  generativeShape: 'gen-0',
+  emotion: 'neutral',
+})
 
 const trial = (
   stimulus: Stimulus,

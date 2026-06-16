@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { GAME_MODE_LABELS, TWO_G_DEFAULT_SETTINGS, TWO_G_INTERVAL_PRESETS } from '../lib/constants'
+import { GAME_MODE_LABELS, TWO_G_INTERVAL_PRESETS, TWO_G_PLUS_DEFAULT_SETTINGS, TWO_G_DEFAULT_SETTINGS } from '../lib/constants'
 import { getEnglishVoices, resumeAudio } from '../lib/audio'
 import type { GameMode, GameSettings } from '../types/game'
 
@@ -78,7 +78,7 @@ function SelectRow<T extends string>({
   )
 }
 
-const GAME_MODES: GameMode[] = ['quad', 'dual', '2g']
+const GAME_MODES: GameMode[] = ['quad', 'dual', '2g', '2g+']
 
 export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onToggle }: SettingsSidebarProps) {
   const modeIndex = GAME_MODES.indexOf(settings.gameMode)
@@ -101,11 +101,13 @@ export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onTogg
       gameMode: next,
       ...(next === '2g'
         ? TWO_G_DEFAULT_SETTINGS
-        : {
-            enableInputGating: false,
-            responseMode: 'per-stream' as const,
-            outputGateMode: 'or' as const,
-          }),
+        : next === '2g+'
+          ? TWO_G_PLUS_DEFAULT_SETTINGS
+          : {
+              enableInputGating: false,
+              responseMode: 'per-stream' as const,
+              outputGateMode: 'or' as const,
+            }),
     })
   }
 
@@ -164,7 +166,7 @@ export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onTogg
           onChange={(nLevel) => onUpdate({ nLevel })}
         />
 
-        {settings.gameMode === '2g' ? (
+        {settings.gameMode === '2g' || settings.gameMode === '2g+' ? (
           <>
             <SelectRow
               label="Stimulus interval"

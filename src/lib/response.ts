@@ -1,5 +1,14 @@
-import type { InputGate, OutputGate, OutputGateMode, Stream, StreamKeys, GameMode } from '../types/game'
-import { streamMatches, getActiveStreams } from './gating'
+import type {
+  HorizontalTask,
+  InputGate,
+  OutputGate,
+  OutputGateMode,
+  Stimulus,
+  Stream,
+  StreamKeys,
+  GameMode,
+} from '../types/game'
+import { getStreamMatches, getActiveStreams } from './gating'
 
 export function pickOutputGate(
   index: number,
@@ -87,27 +96,12 @@ export function evaluate2GResponse(
 }
 
 export function getStreamMatchesForTrial(
-  current: StimulusLike,
-  past: StimulusLike,
+  current: Stimulus,
+  past: Stimulus,
   gate: InputGate,
+  horizontalTask?: HorizontalTask,
 ): Record<Stream, boolean> {
-  return {
-    position: gate.position && streamMatches('position', current, past),
-    orangePosition: gate.orangePosition && streamMatches('orangePosition', current, past),
-    letter: gate.letter && streamMatches('letter', current, past),
-    number: gate.number && streamMatches('number', current, past),
-    color: gate.color && streamMatches('color', current, past),
-    shape: gate.shape && streamMatches('shape', current, past),
-  }
-}
-
-interface StimulusLike {
-  position: number
-  orangePosition: number
-  letter: string
-  number: string
-  color: string
-  shape: string
+  return getStreamMatches(current, past, gate, horizontalTask)
 }
 
 export function evaluatePerStreamResponse(

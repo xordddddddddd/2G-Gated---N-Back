@@ -1,8 +1,17 @@
-import { CELL_PX, COLORS, GRID_PX, LIME_MARKER_HEX, ORANGE_MARKER_HEX } from '../lib/constants'
+import {
+  CELL_PX,
+  COLORS,
+  GRID_PX,
+  LIME_MARKER_HEX,
+  ORANGE_MARKER_HEX,
+} from '../lib/constants'
+import type { GenerativeShape } from '../lib/generativeShapes'
 import { toDisplayPosition } from '../lib/grid3d'
+import { getEmotionById, getInkHex, isGatedTrainingMode } from '../lib/twoGPlus'
 import { GateCellContent, GateLabel } from './GateOverlay'
+import { GenerativeShapeIcon } from './GenerativeShapeIcon'
 import { ShapeIcon } from './ShapeIcon'
-import type { GameMode, GridMode, InputGate, OutputGate, Stimulus } from '../types/game'
+import type { GameMode, GridMode, HorizontalTask, InputGate, OutputGate, Stimulus } from '../types/game'
 
 const CENTER_CELL = 4
 
@@ -16,6 +25,8 @@ interface StimulusGridProps {
   trialIndex?: number
   stimulusVisible?: boolean
   gridMode?: GridMode
+  horizontalTask?: HorizontalTask
+  generativeShapeCatalog?: GenerativeShape[]
 }
 
 function shapeFillColor(
@@ -41,20 +52,27 @@ export function StimulusGrid({
   trialIndex = 0,
   stimulusVisible = true,
   gridMode = '2d',
+  horizontalTask,
+  generativeShapeCatalog = [],
 }: StimulusGridProps) {
   const color = COLORS.find((c) => c.id === stimulus.color) ?? COLORS[0]
   const cells = Array.from({ length: 9 }, (_, i) => i)
   const showStimulus = !idle && stimulusVisible
-  const is2G = gameMode === '2g'
+  const isGated = isGatedTrainingMode(gameMode)
 
   const limeIndex = toDisplayPosition(stimulus.position, gridMode)
   const orangeIndex = toDisplayPosition(stimulus.orangePosition, gridMode)
 
-  const showShape = showStimulus && inputGate.shape
-  const showColorDot = showStimulus && inputGate.color && !inputGate.shape
+  const showShape = showStimulus && inputGate.shape && horizontalTask !== 'generative'
+  const showGenerative =
+    showStimulus && horizontalTask === 'generative' && inputGate.shape && generativeShapeCatalog.length > 0
+  const showColorDot = showStimulus && inputGate.color && !inputGate.shape && horizontalTask !== 'stroop'
   const showColorShape = showStimulus && inputGate.color && inputGate.shape
+  const showStroop = showStimulus && horizontalTask === 'stroop' && inputGate.color
+  const showEmotion = showStimulus && horizontalTask === 'emotional' && inputGate.letter
   const shapeSize = Math.round(CELL_PX * 0.72)
   const markerSize = Math.round(CELL_PX * 0.62)
+  const emotion = getEmotionById(stimulus.emotion)
 
   return (
     <div className="gate-2d-layout shrink-0">
@@ -77,9 +95,12 @@ export function StimulusGrid({
         }}
       >
         {cells.map((i) => {
-          const isLime = showStimulus && is2G && i === limeIndex
-          const isOrange = showStimulus && is2G && i === orangeIndex
-          const isActive = showStimulus && !is2G && i === stimulus.position
+          const isLime = showStimulus && isGated && i === limeIndex
+          const isOrange = showStimulus && isGated && i === orangeIndex
+          const isActive = showStimulus && !isGated && i === stimulus.position
+          const isSpatialActive =
+            showStimulus &&
+            ((isLime && inputGate.position) || (isOrange && inputGate.orangePosition))
           const highlightPosition = isActive && inputGate.position
           const onWhiteCell = Boolean(highlightPosition)
           const shapeColor = shapeFillColor(gameMode, inputGate, color.hex, onWhiteCell)
@@ -128,6 +149,41 @@ export function StimulusGrid({
                       backgroundColor: ORANGE_MARKER_HEX,
                     }}
                   />
+                </div>
+              )}
+              {isSpatialActive && showGenerative && (
+                <div
+                  key={`gen-${trialIndex}`}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-[3] stimulus-cell-pulse"
+                >
+                  <GenerativeShapeIcon
+                    shapeId={stimulus.generativeShape}
+                    catalog={generativeShapeCatalog}
+                    color="#f8fafc"
+                    size={shapeSize}
+                  />
+                </div>
+              )}
+              {i === CENTER_CELL && showStroop && (
+                <div
+                  key={`stroop-${trialIndex}`}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-[4] stimulus-cell-pulse"
+                >
+                  <span
+                    className="font-bold text-2xl tracking-wider select-none"
+                    style={{ color: getInkHex(stimulus.stroopInk) }}
+                  >
+                    {stimulus.stroopWord}
+                  </span>
+                </div>
+              )}
+              {i === CENTER_CELL && showEmotion && (
+                <div
+                  key={`emotion-${trialIndex}`}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-[4] stimulus-cell-pulse text-4xl"
+                  aria-label={emotion.label}
+                >
+                  {emotion.emoji}
                 </div>
               )}
               {isActive && showColorDot && (

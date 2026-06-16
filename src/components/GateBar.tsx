@@ -1,4 +1,5 @@
 import { OUTPUT_GATE_LABELS, STREAM_LABELS } from '../lib/constants'
+import { isGatedTrainingMode } from '../lib/twoGPlus'
 import type { GameMode, InputGate, OutputGate } from '../types/game'
 
 interface GateBarProps {
@@ -37,10 +38,10 @@ export function GateBar({ gameMode, inputGate, outputGate, visible }: GateBarPro
           {output.symbol} {output.label}
         </span>
       </span>
-      {gameMode === '2g' && (
+      {isGatedTrainingMode(gameMode) && (
         <>
           <span className="text-white/25">|</span>
-          <span className="text-white/50">2G</span>
+          <span className="text-white/50">{gameMode === '2g+' ? '2G+' : '2G'}</span>
         </>
       )}
     </div>

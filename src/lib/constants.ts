@@ -79,6 +79,7 @@ export const GAME_MODE_LABELS = {
   quad: 'QUAD',
   dual: 'DUAL',
   '2g': '2G',
+  '2g+': '2G+',
 } as const
 
 export const DEFAULT_STREAM_KEYS: StreamKeys = {
@@ -155,7 +156,7 @@ export const TWO_G_ADAPTIVE_UP_PCT = 90
 export const TWO_G_ADAPTIVE_DOWN_PCT = 70
 
 export function getStreamsForMode(gameMode: GameMode): Stream[] {
-  return gameMode === '2g' ? TWO_G_STREAMS : QUAD_STREAMS
+  return gameMode === '2g' || gameMode === '2g+' ? TWO_G_STREAMS : QUAD_STREAMS
 }
 
 export function get2GBlockLength(nLevel: number): number {
@@ -223,7 +224,14 @@ export const TRIAL_COUNT_OPTIONS = [10, 20, 29, 30, 40, 50, 75, 100]
 export const N_LEVEL_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 export function getGameLabel(settings: Pick<GameSettings, 'gameMode' | 'nLevel'>): string {
-  const prefix = settings.gameMode === 'quad' ? 'Q' : settings.gameMode === 'dual' ? 'D' : '2G'
+  const prefix =
+    settings.gameMode === 'quad'
+      ? 'Q'
+      : settings.gameMode === 'dual'
+        ? 'D'
+        : settings.gameMode === '2g+'
+          ? '2G+'
+          : '2G'
   return `${prefix}${settings.nLevel}B`
 }
 
@@ -247,4 +255,10 @@ export const TWO_G_DEFAULT_SETTINGS: Partial<GameSettings> = {
     color: 'f',
     shape: 'j',
   },
+}
+
+export const TWO_G_PLUS_DEFAULT_SETTINGS: Partial<GameSettings> = {
+  ...TWO_G_DEFAULT_SETTINGS,
+  gameMode: '2g+',
+  interference: 0.25,
 }

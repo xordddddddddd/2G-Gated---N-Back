@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { STREAM_LABELS, TWO_G_STREAMS, TWO_G_STREAM_LABELS } from '../lib/constants'
+import { isGatedTrainingMode, is2GPlus } from '../lib/twoGPlus'
 import { formatPlayTime } from '../lib/history'
 import { averageStreamScores } from '../lib/stats'
 import { getKeyForStream } from '../lib/response'
@@ -54,6 +55,7 @@ export function QuadLayout({
   stimulusVisible,
   blockNumber,
   totalBlocks,
+  generativeShapeCatalog,
   handlePlay,
   stopSession,
   dismissResults,
@@ -72,27 +74,29 @@ export function QuadLayout({
     ? createIdleStimulus()
     : (trial?.stimulus ?? createIdleStimulus())
 
+  const gatedMode = isGatedTrainingMode(settings.gameMode)
   const modeLabel =
-    settings.gameMode === 'quad' ? 'QUAD' : settings.gameMode === 'dual' ? 'DUAL' : '2G'
+    settings.gameMode === 'quad'
+      ? 'QUAD'
+      : settings.gameMode === 'dual'
+        ? 'DUAL'
+        : settings.gameMode === '2g+'
+          ? '2G+'
+          : '2G'
 
   const keys = settings.keys
   const interactive = isPlaying
   const keysSwapped = trial?.keysSwapped ?? false
-  const active2GPair = settings.gameMode === '2g' ? get2GActivePair(gate) : null
+  const horizontalTask = trial?.horizontalTask
+  const active2GPair = gatedMode ? get2GActivePair(gate) : null
   const streamKeyLabel = (stream: Stream) =>
-    settings.gameMode === '2g'
-      ? getDisplayKeyForStream(stream, keys, gate, keysSwapped)
-      : getKeyForStream(stream, keys)
-  const keyMapping =
-    settings.gameMode === '2g' && isPlaying
-      ? format2GKeyMapping(gate, keys, keysSwapped)
-      : ''
-  const resultStreams: Stream[] =
-    settings.gameMode === '2g'
-      ? TWO_G_STREAMS
-      : (['position', 'letter', 'color', 'shape'] as Stream[])
+    gatedMode ? getDisplayKeyForStream(stream, keys, gate, keysSwapped) : getKeyForStream(stream, keys)
+  const keyMapping = gatedMode && isPlaying ? format2GKeyMapping(gate, keys, keysSwapped) : ''
+  const resultStreams: Stream[] = gatedMode
+    ? TWO_G_STREAMS
+    : (['position', 'letter', 'color', 'shape'] as Stream[])
   const streamLabelForResults = (stream: Stream) =>
-    settings.gameMode === '2g' ? TWO_G_STREAM_LABELS[stream] : STREAM_LABELS[stream]
+    gatedMode ? TWO_G_STREAM_LABELS[stream] : STREAM_LABELS[stream]
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -185,11 +189,21 @@ export function QuadLayout({
 
       {helpOpen && (
         <div className="px-6 py-2 text-xs text-white/50 border-b border-white/10 text-center shrink-0 z-20">
-          {settings.gameMode === '2g' ? (
+          {gatedMode ? (
             <>
-              Attend to the active pair each block. Press <b>F</b> for spatial and <b>L</b> for audio
-              when the output gate rule is satisfied (OR / AND / XOR). Stimuli show for 500ms, then
-              blank until the next trial.
+              {is2GPlus(settings.gameMode) ? (
+                <>
+                  2G+ adds Stroop, generative shapes, and emotional streams across blocks. Press{' '}
+                  <b>F</b> spatial · <b>L</b> secondary when the output gate rule is satisfied.
+                </>
+              ) : (
+                <>
+                  Attend to the active pair each block. Press <b>F</b> for spatial and <b>L</b> for
+                  audio when the output gate rule is satisfied (OR / AND / XOR).
+                </>
+              )}
+              {' '}
+              Stimuli show for 500ms, then blank until the next trial.
               {' · '}
               <b>Space</b> Play · <b>Esc</b> Stop
             </>
@@ -207,7 +221,7 @@ export function QuadLayout({
         </div>
       )}
 
-      {settings.gameMode === '2g' && isPlaying && !showIdle && (
+      {gatedMode && isPlaying && !showIdle && (
         <GateBar
           gameMode={settings.gameMode}
           inputGate={gate}
@@ -227,7 +241,7 @@ export function QuadLayout({
               gameMode={settings.gameMode}
               gridMode={settings.gridMode}
               outputGate={trial?.outputGate ?? 'or'}
-              showGate={settings.gameMode === '2g' && !showIdle}
+              showGate={gatedMode && !showIdle}
               trialIndex={isPlaying ? trialIndex : 0}
               stimulusVisible={stimulusVisible}
             />
@@ -242,6 +256,8 @@ export function QuadLayout({
               keys={keys}
               keysSwapped={blockCue.keysSwapped}
               responseSwitching={settings.responseSwitching}
+              horizontalTask={blockCue.horizontalTask}
+              is2GPlus={is2GPlus(settings.gameMode)}
             />
           )}
 
@@ -257,7 +273,7 @@ export function QuadLayout({
             </div>
 
             <div className="qb-keys-left">
-              {settings.gameMode === '2g' && active2GPair ? (
+              {gatedMode && active2GPair ? (
                 <QuadBoxKey
                   stream={active2GPair.spatial}
                   keyLabel={streamKeyLabel(active2GPair.spatial)}
@@ -293,7 +309,7 @@ export function QuadLayout({
             </div>
 
             <div className="qb-keys-right">
-              {settings.gameMode === '2g' && active2GPair ? (
+              {gatedMode && active2GPair ? (
                 <QuadBoxKey
                   stream={active2GPair.audio}
                   keyLabel={streamKeyLabel(active2GPair.audio)}
@@ -302,7 +318,7 @@ export function QuadLayout({
                   wrong={wrongStreams.has(active2GPair.audio)}
                   onPress={() => handleStreamPress(active2GPair.audio)}
                   disabled={!interactive}
-                  labelOverride={get2GAudioLabel(gate)}
+                  labelOverride={get2GAudioLabel(gate, horizontalTask)}
                 />
               ) : (
                 <>
@@ -336,10 +352,12 @@ export function QuadLayout({
                   idle={showIdle}
                   gameMode={settings.gameMode}
                   outputGate={trial?.outputGate ?? 'or'}
-                  showGate={settings.gameMode === '2g' && !showIdle}
+                  showGate={gatedMode && !showIdle}
                   trialIndex={isPlaying ? trialIndex : 0}
                   stimulusVisible={stimulusVisible}
                   gridMode={settings.gridMode}
+                  horizontalTask={horizontalTask}
+                  generativeShapeCatalog={generativeShapeCatalog}
                 />
               </div>
             )}
@@ -368,17 +386,17 @@ export function QuadLayout({
         <footer className="px-4 py-1 text-center text-[10px] text-white/20 shrink-0 z-20 space-y-0.5">
           <div>
             Trial {playedIndex + 1} / {totalTrials}
-            {settings.gameMode === '2g' && blockNumber && totalBlocks && (
+            {gatedMode && blockNumber && totalBlocks && (
               <span className="text-white/30">
                 {' '}
                 · Block {blockNumber}/{totalBlocks}
               </span>
             )}
-            {settings.gameMode === '2g' && settings.variableTiming && trial?.intervalMs && (
+            {gatedMode && settings.variableTiming && trial?.intervalMs && (
               <span className="text-white/30"> · {trial.intervalMs}ms</span>
             )}
           </div>
-          {settings.gameMode === '2g' && settings.responseSwitching && keyMapping && (
+          {gatedMode && settings.responseSwitching && keyMapping && (
             <div className="text-white/35 tracking-wide">{keyMapping}</div>
           )}
         </footer>

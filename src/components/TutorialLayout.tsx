@@ -1,3 +1,4 @@
+import { isGatedTrainingMode } from '../lib/twoGPlus'
 import { GAME_MODE_LABELS } from '../lib/constants'
 import { getTutorialProgress } from '../lib/tutorial'
 import { createIdleGate, createIdleStimulus } from '../lib/sequence'
@@ -87,7 +88,7 @@ export function TutorialLayout({ game, tutorial, onExit, onStartTraining }: Tuto
             gameMode={settings.gameMode}
             gridMode={settings.gridMode}
             outputGate={demoTrial?.outputGate ?? 'or'}
-            showGate={settings.gameMode === '2g' && Boolean(demoTrial)}
+            showGate={isGatedTrainingMode(settings.gameMode) && Boolean(demoTrial)}
           />
         )}
 

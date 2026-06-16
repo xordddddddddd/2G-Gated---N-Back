@@ -1,4 +1,5 @@
 import { OUTPUT_GATE_LABELS } from '../lib/constants'
+import { isGatedTrainingMode } from '../lib/twoGPlus'
 import { Grid3DOverlay } from './Grid3DOverlay'
 import { QuadBoard } from './QuadBoard'
 import type { GameSettings, Trial, TrialFeedback } from '../types/game'
@@ -71,7 +72,7 @@ export function GameScreen({
             gameMode={settings.gameMode}
             gridMode={settings.gridMode}
             outputGate={trial.outputGate}
-            showGate={settings.gameMode === '2g'}
+            showGate={isGatedTrainingMode(settings.gameMode)}
           />
         )}
 

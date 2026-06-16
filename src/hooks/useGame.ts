@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { resumeAudio, setVoicePreference, speakLetter, speakNumber, stopSpeech } from '../lib/audio'
+import { resumeAudio, setVoicePreference, speakEmotion, speakInkColor, speakLetter, speakNumber, stopSpeech } from '../lib/audio'
 import {
   get2GBlockIndex,
   get2GBlockLength,
@@ -13,7 +13,7 @@ import {
 import { getGameLabel } from '../lib/constants'
 import { shouldRespond, getActiveStreams } from '../lib/gating'
 import { addPlayTime, getTodayPlayTimeMs, saveSession } from '../lib/history'
-import { generateTrials } from '../lib/sequence'
+import { generateSession } from '../lib/sequence'
 import { loadSettings, saveSettings, resetSettings } from '../lib/settings'
 import {
   evaluate2GResponse,
@@ -23,12 +23,14 @@ import {
   streamFromKey,
 } from '../lib/response'
 import { streamFromKeyFor2G } from '../lib/twoG'
+import { isGatedTrainingMode } from '../lib/twoGPlus'
 import { computeStats, suggestNLevel, averageStreamScores } from '../lib/stats'
 import { cancelTrialClock, startTrialClock } from '../lib/trialClockWorker'
 import type {
   GamePhase,
   GameSession,
   GameSettings,
+  HorizontalTask,
   InputGate,
   OutputGate,
   SessionStats,
@@ -36,6 +38,7 @@ import type {
   TrialFeedback,
   TrialResult,
 } from '../types/game'
+import type { GenerativeShape } from '../lib/generativeShapes'
 
 function buildStreamCorrect(
   pressed: Set<Stream>,
@@ -103,7 +106,8 @@ export function useGame() {
     setVoicePreference(loaded.voiceUri)
     return loaded
   })
-  const [trials, setTrials] = useState<ReturnType<typeof generateTrials>>([])
+  const [trials, setTrials] = useState<ReturnType<typeof generateSession>['trials']>([])
+  const [generativeShapeCatalog, setGenerativeShapeCatalog] = useState<GenerativeShape[]>([])
   const [trialIndex, setTrialIndex] = useState(0)
   const [results, setResults] = useState<TrialResult[]>([])
   const [feedback, setFeedback] = useState<TrialFeedback>(null)
@@ -116,6 +120,7 @@ export function useGame() {
     outputGate: OutputGate
     blockNumber: number
     keysSwapped: boolean
+    horizontalTask?: HorizontalTask
   } | null>(null)
   const [awaitingBlockCue, setAwaitingBlockCue] = useState(false)
   const [stimulusVisible, setStimulusVisible] = useState(true)
@@ -142,18 +147,18 @@ export function useGame() {
 
   const currentTrial = trials[trialIndex] ?? null
   const nLevel = settings.nLevel
-  const isScorable =
-    settings.gameMode === '2g'
-      ? is2GTrialScorable(trialIndex, nLevel)
-      : trialIndex >= nLevel
-  const playedTrials =
-    settings.gameMode === '2g' ? get2GSessionScorableTrials() : settings.trialCount
-  const playedIndex =
-    settings.gameMode === '2g'
-      ? get2GPlayedIndex(trialIndex, nLevel)
-      : Math.max(trialIndex - nLevel, 0)
-  const blockNumber =
-    settings.gameMode === '2g' ? get2GBlockIndex(trialIndex, nLevel) + 1 : null
+  const isScorable = isGatedTrainingMode(settings.gameMode)
+    ? is2GTrialScorable(trialIndex, nLevel)
+    : trialIndex >= nLevel
+  const playedTrials = isGatedTrainingMode(settings.gameMode)
+    ? get2GSessionScorableTrials()
+    : settings.trialCount
+  const playedIndex = isGatedTrainingMode(settings.gameMode)
+    ? get2GPlayedIndex(trialIndex, nLevel)
+    : Math.max(trialIndex - nLevel, 0)
+  const blockNumber = isGatedTrainingMode(settings.gameMode)
+    ? get2GBlockIndex(trialIndex, nLevel) + 1
+    : null
   const trialsRemaining = Math.max(playedTrials - playedIndex - 1, 0)
   const isPlaying = phase === 'playing'
 
@@ -217,11 +222,13 @@ export function useGame() {
     let streamCorrect: Partial<Record<Stream, boolean>> = {}
     const activeStreams = getActiveStreams(currentTrial.inputGate)
 
-    if (settings.gameMode === '2g') {
+    if (isGatedTrainingMode(settings.gameMode)) {
+      const horizontalTask = currentTrial.horizontalTask
       const streamMatchesMap = getStreamMatchesForTrial(
         currentTrial.stimulus,
         past.stimulus,
         currentTrial.inputGate,
+        horizontalTask,
       )
       const result = evaluate2GResponse(
         pressed,
@@ -323,14 +330,16 @@ export function useGame() {
       const past = trials[trialIndex - nLevel]
       if (!past) return
 
+      const horizontalTask = currentTrial.horizontalTask
       const streamMatchesMap = getStreamMatchesForTrial(
         currentTrial.stimulus,
         past.stimulus,
         currentTrial.inputGate,
+        horizontalTask,
       )
       const gate = currentTrial.inputGate
 
-      if (settings.gameMode === '2g') {
+      if (isGatedTrainingMode(settings.gameMode)) {
         const result = evaluate2GResponse(
           pressed,
           streamMatchesMap,
@@ -504,7 +513,7 @@ export function useGame() {
     }
 
     if (
-      settings.gameMode === '2g' &&
+      isGatedTrainingMode(settings.gameMode) &&
       is2GBlockStart(nextIndex, settings.nLevel) &&
       nextIndex > 0
     ) {
@@ -514,6 +523,7 @@ export function useGame() {
         outputGate: nextTrial.outputGate,
         blockNumber: Math.floor(nextIndex / get2GBlockLength(settings.nLevel)) + 1,
         keysSwapped: nextTrial.keysSwapped ?? false,
+        horizontalTask: nextTrial.horizontalTask,
       })
       setAwaitingBlockCue(true)
       setTrialIndex(nextIndex)
@@ -530,9 +540,10 @@ export function useGame() {
     await resumeAudio()
     clearTimers()
     cancelledRef.current = false
-    const generated = generateTrials(settings)
-    setTrials(generated)
-    const startAt = settings.gameMode === '2g' ? 0 : nLevel
+    const generated = generateSession(settings)
+    setTrials(generated.trials)
+    setGenerativeShapeCatalog(generated.generativeShapeCatalog)
+    const startAt = isGatedTrainingMode(settings.gameMode) ? 0 : nLevel
     setTrialIndex(startAt)
     setResults([])
     setFeedback(null)
@@ -546,12 +557,13 @@ export function useGame() {
     setStats(null)
     sessionStartRef.current = Date.now()
 
-    if (settings.gameMode === '2g' && generated[0]) {
+    if (isGatedTrainingMode(settings.gameMode) && generated.trials[0]) {
       setBlockCue({
-        inputGate: generated[0].inputGate,
-        outputGate: generated[0].outputGate,
+        inputGate: generated.trials[0].inputGate,
+        outputGate: generated.trials[0].outputGate,
         blockNumber: 1,
-        keysSwapped: generated[0].keysSwapped ?? false,
+        keysSwapped: generated.trials[0].keysSwapped ?? false,
+        horizontalTask: generated.trials[0].horizontalTask,
       })
       setAwaitingBlockCue(true)
     } else {
@@ -629,27 +641,31 @@ export function useGame() {
     if (!trial) return
 
     const clockId = ++trialClockIdRef.current
-    const scorable =
-      settings.gameMode === '2g'
-        ? is2GTrialScorable(trialIndex, settings.nLevel)
-        : trialIndex >= settings.nLevel
+    const scorable = isGatedTrainingMode(settings.gameMode)
+      ? is2GTrialScorable(trialIndex, settings.nLevel)
+      : trialIndex >= settings.nLevel
     const trialMs = trial.intervalMs ?? settings.intervalMs
-    const visibleMs =
-      settings.gameMode === '2g' ? TWO_G_STIMULUS_VISIBLE_MS : trialMs
+    const visibleMs = isGatedTrainingMode(settings.gameMode) ? TWO_G_STIMULUS_VISIBLE_MS : trialMs
 
     setStimulusVisible(true)
     if (hideStimulusTimeoutRef.current) {
       clearTimeout(hideStimulusTimeoutRef.current)
     }
     hideStimulusTimeoutRef.current = setTimeout(() => {
-      if (settings.gameMode === '2g') setStimulusVisible(false)
+      if (isGatedTrainingMode(settings.gameMode)) setStimulusVisible(false)
     }, visibleMs)
 
     if (settings.soundEnabled) {
-      if (settings.gameMode === '2g') {
+      if (isGatedTrainingMode(settings.gameMode)) {
         speakLetter(trial.stimulus.letter, true)
         speakTimeoutRef.current = setTimeout(() => {
           speakNumber(trial.stimulus.number, true)
+          if (trial.horizontalTask === 'stroop' && trial.inputGate.color) {
+            setTimeout(() => speakInkColor(trial.stimulus.stroopInk, true), 380)
+          }
+          if (trial.horizontalTask === 'emotional' && trial.inputGate.letter) {
+            setTimeout(() => speakEmotion(trial.stimulus.emotion, true), 380)
+          }
         }, 420)
       } else if (trial.inputGate.letter) {
         speakLetter(trial.stimulus.letter, true)
@@ -704,8 +720,7 @@ export function useGame() {
     const onKeyDown = (e: KeyboardEvent) => {
       if (phase !== 'playing' || respondedThisTrialRef.current || !isScorable || awaitingBlockCue) return
 
-      const stream =
-        settings.gameMode === '2g' && currentTrial
+      const stream = isGatedTrainingMode(settings.gameMode) && currentTrial
           ? streamFromKeyFor2G(
               e.key,
               settings.keys,
@@ -764,7 +779,8 @@ export function useGame() {
     awaitingBlockCue,
     stimulusVisible,
     blockNumber,
-    totalBlocks: settings.gameMode === '2g' ? TWO_G_SESSION_BLOCKS : null,
+    generativeShapeCatalog,
+    totalBlocks: isGatedTrainingMode(settings.gameMode) ? TWO_G_SESSION_BLOCKS : null,
     handlePlay,
     startSession,
     stopSession,

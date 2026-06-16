@@ -7,11 +7,29 @@ import {
   get2GBlockLength,
   getLettersForMode,
   getShapesForMode,
-  getStreamsForMode,
 } from './constants'
+import type { GenerativeShape } from './generativeShapes'
 import { randomPosition3D } from './grid3d'
+import { getActiveStreams } from './gating'
+import { getStreamMatchValue } from './twoGPlus'
+import {
+  createEmotionField,
+  createGenerativeShapeField,
+  createStroopFields,
+  get2GPlusBlockConfig,
+  is2GPlus,
+  resolveGenerativeShapeCatalog,
+} from './twoGPlus'
 import { pickVariableIntervalMs } from './twoG'
-import type { GameSettings, InputGate, OutputGate, Stimulus, Stream, Trial } from '../types/game'
+import type {
+  GameSettings,
+  HorizontalTask,
+  InputGate,
+  OutputGate,
+  Stimulus,
+  Stream,
+  Trial,
+} from '../types/game'
 
 function randomItem<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)]
@@ -22,11 +40,13 @@ function randomPosition(gridMode: GameSettings['gridMode']): number {
 }
 
 function createStimulus(
-  settings: Pick<GameSettings, 'audioMode' | 'shapeMode' | 'gridMode' | 'gameMode'>,
+  settings: Pick<GameSettings, 'audioMode' | 'shapeMode' | 'gridMode'>,
+  generativeCatalog: GenerativeShape[],
   overrides: Partial<Stimulus> = {},
 ): Stimulus {
   const letters = getLettersForMode(settings.audioMode)
   const shapes = getShapesForMode(settings.shapeMode)
+  const stroop = createStroopFields()
   return {
     position: randomPosition(settings.gridMode),
     orangePosition: randomPosition(settings.gridMode),
@@ -34,6 +54,10 @@ function createStimulus(
     number: randomItem(NUMBERS_8),
     color: randomItem(COLORS).id,
     shape: randomItem(shapes).id,
+    stroopWord: stroop.stroopWord,
+    stroopInk: stroop.stroopInk,
+    generativeShape: createGenerativeShapeField(generativeCatalog),
+    emotion: createEmotionField(),
     ...overrides,
   }
 }
@@ -70,6 +94,18 @@ function pickInputGate(
   return { ...settings.enabledStreams }
 }
 
+function pickGatedBlockMeta(
+  blockIndex: number,
+  gameMode: GameSettings['gameMode'],
+): { inputGate: InputGate; horizontalTask: HorizontalTask } {
+  if (gameMode === '2g+') {
+    const config = get2GPlusBlockConfig(blockIndex)
+    return { inputGate: config.gate, horizontalTask: config.task }
+  }
+  const pair = TWO_G_INPUT_PAIRS[blockIndex % TWO_G_INPUT_PAIRS.length]
+  return { inputGate: pair, horizontalTask: 'standard' }
+}
+
 function pickBlockOutputGate(
   blockIndex: number,
   mode: GameSettings['outputGateMode'],
@@ -83,7 +119,7 @@ function pickBlockOutputGate(
   return blockGates.get(blockIndex)!
 }
 
-function build2GTrialMeta(
+function buildGatedTrialMeta(
   trialIndex: number,
   settings: Pick<GameSettings, 'nLevel' | 'intervalMs' | 'responseSwitching' | 'variableTiming'>,
   blockKeySwaps: Map<number, boolean>,
@@ -102,20 +138,33 @@ function build2GTrialMeta(
   }
 }
 
-function copyStreamFrom(target: Stimulus, source: Stimulus, gate: InputGate): Stimulus {
-  return {
-    position: gate.position ? source.position : target.position,
-    orangePosition: gate.orangePosition ? source.orangePosition : target.orangePosition,
-    letter: gate.letter ? source.letter : target.letter,
-    number: gate.number ? source.number : target.number,
-    color: gate.color ? source.color : target.color,
-    shape: gate.shape ? source.shape : target.shape,
+function copyStreamFrom(
+  target: Stimulus,
+  source: Stimulus,
+  gate: InputGate,
+  horizontalTask?: HorizontalTask,
+): Stimulus {
+  const result = { ...target }
+  for (const stream of getActiveStreams(gate)) {
+    if (horizontalTask === 'stroop' && stream === 'color') {
+      result.stroopInk = source.stroopInk
+      result.stroopWord = source.stroopWord
+    } else if (horizontalTask === 'generative' && stream === 'shape') {
+      result.generativeShape = source.generativeShape
+    } else if (horizontalTask === 'emotional' && stream === 'letter') {
+      result.emotion = source.emotion
+    } else {
+      result[stream] = source[stream] as never
+    }
   }
+  return result
 }
 
 function randomStreamValue(
   stream: Stream,
   settings: Pick<GameSettings, 'audioMode' | 'shapeMode' | 'gridMode'>,
+  generativeCatalog: GenerativeShape[],
+  horizontalTask?: HorizontalTask,
   avoid?: string | number,
 ): string | number {
   const letters = getLettersForMode(settings.audioMode)
@@ -128,6 +177,11 @@ function randomStreamValue(
       return value
     }
     case 'letter': {
+      if (horizontalTask === 'emotional') {
+        let value = createEmotionField()
+        while (value === avoid) value = createEmotionField()
+        return value
+      }
       let value = randomItem(letters)
       while (value === avoid) value = randomItem(letters)
       return value
@@ -138,16 +192,49 @@ function randomStreamValue(
       return value
     }
     case 'color': {
+      if (horizontalTask === 'stroop') {
+        const stroop = createStroopFields()
+        let ink = stroop.stroopInk
+        while (ink === avoid) {
+          const next = createStroopFields()
+          ink = next.stroopInk
+        }
+        return ink
+      }
       let value = randomItem(COLORS).id
       while (value === avoid) value = randomItem(COLORS).id
       return value
     }
     case 'shape': {
+      if (horizontalTask === 'generative') {
+        let value = createGenerativeShapeField(generativeCatalog)
+        while (value === avoid) value = createGenerativeShapeField(generativeCatalog)
+        return value
+      }
       let value = randomItem(shapes).id
       while (value === avoid) value = randomItem(shapes).id
       return value
     }
   }
+}
+
+function applyStreamValue(
+  stimulus: Stimulus,
+  stream: Stream,
+  value: string | number,
+  horizontalTask?: HorizontalTask,
+): Stimulus {
+  if (horizontalTask === 'stroop' && stream === 'color') {
+    const stroop = createStroopFields()
+    return { ...stimulus, stroopInk: String(value), stroopWord: stroop.stroopWord }
+  }
+  if (horizontalTask === 'generative' && stream === 'shape') {
+    return { ...stimulus, generativeShape: String(value) }
+  }
+  if (horizontalTask === 'emotional' && stream === 'letter') {
+    return { ...stimulus, emotion: String(value) }
+  }
+  return { ...stimulus, [stream]: value }
 }
 
 function applyInterference(
@@ -157,47 +244,58 @@ function applyInterference(
   nLevel: number,
   gate: InputGate,
   interference: number,
-  gameMode: GameSettings['gameMode'],
+  horizontalTask?: HorizontalTask,
 ): Stimulus {
   if (Math.random() >= interference || currentIndex < nLevel + 2) return stimulus
   const pastIndex = Math.floor(Math.random() * Math.min(currentIndex - 1, nLevel * 2))
   const past = trials[pastIndex]?.stimulus
   if (!past) return stimulus
 
-  const active = getStreamsForMode(gameMode).filter((s) => gate[s])
+  const active = getActiveStreams(gate)
   if (active.length === 0) return stimulus
   const stream = randomItem(active)
-  return { ...stimulus, [stream]: past[stream] }
+  const pastValue = getStreamMatchValue(past, stream, horizontalTask)
+  return applyStreamValue(stimulus, stream, pastValue, horizontalTask)
 }
 
 function generateMatchTrial(
   past: Stimulus,
   gate: InputGate,
   outputGate: OutputGate,
-  settings: Pick<GameSettings, 'audioMode' | 'shapeMode' | 'gridMode' | 'gameMode'>,
+  settings: Pick<GameSettings, 'audioMode' | 'shapeMode' | 'gridMode'>,
+  generativeCatalog: GenerativeShape[],
+  horizontalTask?: HorizontalTask,
 ): Stimulus {
-  const base = createStimulus(settings)
-  const activeStreams = getStreamsForMode(settings.gameMode).filter((s) => gate[s])
+  const base = createStimulus(settings, generativeCatalog)
+  const activeStreams = getActiveStreams(gate)
 
   if (activeStreams.length === 0) return base
 
   switch (outputGate) {
     case 'or': {
       const matchStream = randomItem(activeStreams)
-      return { ...base, [matchStream]: past[matchStream] }
+      return copyStreamFrom(base, past, { ...gate, [matchStream]: true }, horizontalTask)
     }
     case 'and':
-      return copyStreamFrom(base, past, gate)
+      return copyStreamFrom(base, past, gate, horizontalTask)
     case 'xor': {
       if (activeStreams.length < 2) {
         const matchStream = activeStreams[0]
-        return { ...base, [matchStream]: past[matchStream] }
+        return copyStreamFrom(base, past, { ...gate, [matchStream]: true }, horizontalTask)
       }
       const matchStream = randomItem(activeStreams)
-      const result = copyStreamFrom(base, past, { ...gate, [matchStream]: true })
+      const result = copyStreamFrom(base, past, { ...gate, [matchStream]: true }, horizontalTask)
       for (const stream of activeStreams) {
         if (stream === matchStream) continue
-        result[stream] = randomStreamValue(stream, settings, past[stream]) as never
+        const pastVal = getStreamMatchValue(past, stream, horizontalTask)
+        const newVal = randomStreamValue(
+          stream,
+          settings,
+          generativeCatalog,
+          horizontalTask,
+          pastVal,
+        )
+        Object.assign(result, applyStreamValue(result, stream, newVal, horizontalTask))
       }
       return result
     }
@@ -208,23 +306,31 @@ function generateNonMatchTrial(
   past: Stimulus,
   gate: InputGate,
   outputGate: OutputGate,
-  settings: Pick<GameSettings, 'audioMode' | 'shapeMode' | 'gridMode' | 'gameMode'>,
+  settings: Pick<GameSettings, 'audioMode' | 'shapeMode' | 'gridMode'>,
+  generativeCatalog: GenerativeShape[],
+  horizontalTask?: HorizontalTask,
 ): Stimulus {
-  let stimulus = createStimulus(settings)
+  let stimulus = createStimulus(settings, generativeCatalog)
   let attempts = 0
 
   while (attempts < 50) {
-    const wouldMatch = wouldTrialMatch(stimulus, past, gate, outputGate)
+    const wouldMatch = wouldTrialMatch(stimulus, past, gate, outputGate, horizontalTask)
     if (!wouldMatch) return stimulus
 
-    const activeStreams = getStreamsForMode(settings.gameMode).filter((s) => gate[s])
+    const activeStreams = getActiveStreams(gate)
 
     for (const stream of activeStreams) {
-      if (stimulus[stream] === past[stream]) {
-        stimulus = {
-          ...stimulus,
-          [stream]: randomStreamValue(stream, settings, past[stream]),
-        }
+      const pastVal = getStreamMatchValue(past, stream, horizontalTask)
+      const currentVal = getStreamMatchValue(stimulus, stream, horizontalTask)
+      if (currentVal === pastVal) {
+        const newVal = randomStreamValue(
+          stream,
+          settings,
+          generativeCatalog,
+          horizontalTask,
+          pastVal,
+        )
+        stimulus = applyStreamValue(stimulus, stream, newVal, horizontalTask)
       }
     }
     attempts++
@@ -238,9 +344,14 @@ function wouldTrialMatch(
   past: Stimulus,
   gate: InputGate,
   outputGate: OutputGate,
+  horizontalTask?: HorizontalTask,
 ): boolean {
-  const active = getActiveStreamsFromGate(gate)
-  const matches = active.map((s) => current[s] === past[s])
+  const active = getActiveStreams(gate)
+  const matches = active.map(
+    (s) =>
+      getStreamMatchValue(current, s, horizontalTask) ===
+      getStreamMatchValue(past, s, horizontalTask),
+  )
   const matchCount = matches.filter(Boolean).length
 
   switch (outputGate) {
@@ -253,64 +364,86 @@ function wouldTrialMatch(
   }
 }
 
-function getActiveStreamsFromGate(gate: InputGate): Stream[] {
-  const streams: Stream[] = []
-  if (gate.position) streams.push('position')
-  if (gate.orangePosition) streams.push('orangePosition')
-  if (gate.letter) streams.push('letter')
-  if (gate.number) streams.push('number')
-  if (gate.color) streams.push('color')
-  if (gate.shape) streams.push('shape')
-  return streams
+function generateGatedTrials(
+  settings: GameSettings,
+  generativeCatalog: GenerativeShape[],
+): Trial[] {
+  const nLevel = settings.nLevel
+  const blockLength = get2GBlockLength(nLevel)
+  const totalTrials = TWO_G_SESSION_BLOCKS * blockLength
+  const trials: Trial[] = []
+  const blockKeySwaps = new Map<number, boolean>()
+  const blockOutputGates = new Map<number, OutputGate>()
+
+  for (let i = 0; i < totalTrials; i++) {
+    const posInBlock = i % blockLength
+    const blockIndex = get2GBlockIndex(i, nLevel)
+    const { inputGate, horizontalTask } = pickGatedBlockMeta(blockIndex, settings.gameMode)
+    const outputGate = pickBlockOutputGate(blockIndex, settings.outputGateMode, blockOutputGates)
+    const meta = buildGatedTrialMeta(i, settings, blockKeySwaps)
+
+    if (posInBlock < nLevel) {
+      trials.push({
+        stimulus: createStimulus(settings, generativeCatalog),
+        inputGate,
+        outputGate,
+        horizontalTask,
+        ...meta,
+      })
+      continue
+    }
+
+    const past = trials[i - nLevel].stimulus
+    const shouldMatch = Math.random() < settings.matchProbability
+    let stimulus = shouldMatch
+      ? generateMatchTrial(past, inputGate, outputGate, settings, generativeCatalog, horizontalTask)
+      : generateNonMatchTrial(
+          past,
+          inputGate,
+          outputGate,
+          settings,
+          generativeCatalog,
+          horizontalTask,
+        )
+
+    stimulus = applyInterference(
+      stimulus,
+      trials,
+      i,
+      nLevel,
+      inputGate,
+      settings.interference,
+      horizontalTask,
+    )
+    trials.push({ stimulus, inputGate, outputGate, horizontalTask, ...meta })
+  }
+
+  return trials
 }
 
-export function generateTrials(settings: GameSettings): Trial[] {
+export interface GeneratedSession {
+  trials: Trial[]
+  generativeShapeCatalog: GenerativeShape[]
+}
+
+export function generateSession(settings: GameSettings): GeneratedSession {
+  const generativeCatalog = is2GPlus(settings.gameMode)
+    ? resolveGenerativeShapeCatalog()
+    : []
+
+  if (settings.gameMode === '2g' || settings.gameMode === '2g+') {
+    return {
+      trials: generateGatedTrials(settings, generativeCatalog),
+      generativeShapeCatalog: generativeCatalog,
+    }
+  }
+
   const nLevel = settings.nLevel
   const trials: Trial[] = []
 
-  if (settings.gameMode === '2g') {
-    const blockLength = get2GBlockLength(nLevel)
-    const totalTrials = TWO_G_SESSION_BLOCKS * blockLength
-
-    const blockKeySwaps = new Map<number, boolean>()
-    const blockOutputGates = new Map<number, OutputGate>()
-
-    for (let i = 0; i < totalTrials; i++) {
-      const posInBlock = i % blockLength
-      const blockIndex = get2GBlockIndex(i, nLevel)
-      const inputGate = pickInputGate(i, settings)
-      const outputGate = pickBlockOutputGate(blockIndex, settings.outputGateMode, blockOutputGates)
-      const meta = build2GTrialMeta(i, settings, blockKeySwaps)
-
-      if (posInBlock < nLevel) {
-        trials.push({ stimulus: createStimulus(settings), inputGate, outputGate, ...meta })
-        continue
-      }
-
-      const past = trials[i - nLevel].stimulus
-      const shouldMatch = Math.random() < settings.matchProbability
-      let stimulus = shouldMatch
-        ? generateMatchTrial(past, inputGate, outputGate, settings)
-        : generateNonMatchTrial(past, inputGate, outputGate, settings)
-
-      stimulus = applyInterference(
-        stimulus,
-        trials,
-        i,
-        nLevel,
-        inputGate,
-        settings.interference,
-        settings.gameMode,
-      )
-      trials.push({ stimulus, inputGate, outputGate, ...meta })
-    }
-
-    return trials
-  }
-
   for (let i = 0; i < nLevel; i++) {
     trials.push({
-      stimulus: createStimulus(settings),
+      stimulus: createStimulus(settings, []),
       inputGate: pickInputGate(i, settings),
       outputGate: settings.outputGateMode === 'random' ? 'or' : settings.outputGateMode,
     })
@@ -324,8 +457,8 @@ export function generateTrials(settings: GameSettings): Trial[] {
     const shouldMatch = Math.random() < settings.matchProbability
 
     let stimulus = shouldMatch
-      ? generateMatchTrial(past, inputGate, outputGate, settings)
-      : generateNonMatchTrial(past, inputGate, outputGate, settings)
+      ? generateMatchTrial(past, inputGate, outputGate, settings, [], undefined)
+      : generateNonMatchTrial(past, inputGate, outputGate, settings, [], undefined)
 
     stimulus = applyInterference(
       stimulus,
@@ -334,13 +467,17 @@ export function generateTrials(settings: GameSettings): Trial[] {
       nLevel,
       inputGate,
       settings.interference,
-      settings.gameMode,
+      undefined,
     )
 
     trials.push({ stimulus, inputGate, outputGate })
   }
 
-  return trials
+  return { trials, generativeShapeCatalog: [] }
+}
+
+export function generateTrials(settings: GameSettings): Trial[] {
+  return generateSession(settings).trials
 }
 
 export function createIdleStimulus(): Stimulus {
@@ -351,6 +488,10 @@ export function createIdleStimulus(): Stimulus {
     number: '1',
     color: 'blue',
     shape: 'circle',
+    stroopWord: 'RED',
+    stroopInk: 'blue',
+    generativeShape: 'gen-0',
+    emotion: 'neutral',
   }
 }
 

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { COLORS, LIME_MARKER_HEX, ORANGE_MARKER_HEX } from '../lib/constants'
+import { isGatedTrainingMode } from '../lib/twoGPlus'
 import {
   getRotationStart,
   indexToPositionKey,
@@ -67,7 +68,7 @@ export function StimulusCube3D({
   const rotationStart = useMemo(() => getRotationStart(), [])
   const durationSec = rotationDurationSec(rotationSpeed)
   const showStimulus = !idle && stimulusVisible
-  const is2G = gameMode === '2g'
+  const isGated = isGatedTrainingMode(gameMode)
 
   const displayIndex = toDisplayPosition(stimulus.position, gridMode)
   const positionKey = indexToPositionKey(displayIndex)
@@ -75,7 +76,7 @@ export function StimulusCube3D({
   const orangePositionKey = indexToPositionKey(orangeDisplayIndex)
 
   const showCell =
-    showStimulus && !is2G && (inputGate.position || inputGate.color || inputGate.shape)
+    showStimulus && !isGated && (inputGate.position || inputGate.color || inputGate.shape)
   const highlightPosition = showCell && inputGate.position
   const appearance = getCubeAppearance(stimulus, inputGate, gameMode, Boolean(highlightPosition))
 
@@ -97,7 +98,7 @@ export function StimulusCube3D({
           } as React.CSSProperties
         }
       >
-        {showStimulus && is2G && (
+        {showStimulus && isGated && (
           <>
             <GridCell3D
               key={`lime-${trialIndex}`}

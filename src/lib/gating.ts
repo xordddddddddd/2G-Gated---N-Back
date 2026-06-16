@@ -1,4 +1,5 @@
-import type { InputGate, OutputGate, Stimulus, Stream } from '../types/game'
+import type { HorizontalTask, InputGate, OutputGate, Stimulus, Stream } from '../types/game'
+import { getStreamMatchValue } from './twoGPlus'
 
 export function getActiveStreams(gate: InputGate): Stream[] {
   const streams: Stream[] = []
@@ -15,35 +16,28 @@ export function streamMatches(
   stream: Stream,
   current: Stimulus,
   past: Stimulus,
+  horizontalTask?: HorizontalTask,
 ): boolean {
-  switch (stream) {
-    case 'position':
-      return current.position === past.position
-    case 'orangePosition':
-      return current.orangePosition === past.orangePosition
-    case 'letter':
-      return current.letter === past.letter
-    case 'number':
-      return current.number === past.number
-    case 'color':
-      return current.color === past.color
-    case 'shape':
-      return current.shape === past.shape
-  }
+  return (
+    getStreamMatchValue(current, stream, horizontalTask) ===
+    getStreamMatchValue(past, stream, horizontalTask)
+  )
 }
 
 export function getStreamMatches(
   current: Stimulus,
   past: Stimulus,
   gate: InputGate,
+  horizontalTask?: HorizontalTask,
 ): Record<Stream, boolean> {
   return {
-    position: gate.position && streamMatches('position', current, past),
-    orangePosition: gate.orangePosition && streamMatches('orangePosition', current, past),
-    letter: gate.letter && streamMatches('letter', current, past),
-    number: gate.number && streamMatches('number', current, past),
-    color: gate.color && streamMatches('color', current, past),
-    shape: gate.shape && streamMatches('shape', current, past),
+    position: gate.position && streamMatches('position', current, past, horizontalTask),
+    orangePosition:
+      gate.orangePosition && streamMatches('orangePosition', current, past, horizontalTask),
+    letter: gate.letter && streamMatches('letter', current, past, horizontalTask),
+    number: gate.number && streamMatches('number', current, past, horizontalTask),
+    color: gate.color && streamMatches('color', current, past, horizontalTask),
+    shape: gate.shape && streamMatches('shape', current, past, horizontalTask),
   }
 }
 
@@ -52,11 +46,12 @@ export function shouldRespond(
   past: Stimulus,
   gate: InputGate,
   outputGate: OutputGate,
+  horizontalTask?: HorizontalTask,
 ): boolean {
   const active = getActiveStreams(gate)
   if (active.length === 0 || !past) return false
 
-  const matches = active.map((s) => streamMatches(s, current, past))
+  const matches = active.map((s) => streamMatches(s, current, past, horizontalTask))
   const matchCount = matches.filter(Boolean).length
 
   switch (outputGate) {

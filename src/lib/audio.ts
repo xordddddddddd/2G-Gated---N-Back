@@ -1,3 +1,6 @@
+import { COLORS } from './constants'
+import { getEmotionById } from './twoGPlus'
+
 const LETTER_FREQUENCIES: Record<string, number> = {
   C: 261.63,
   H: 293.66,
@@ -194,6 +197,34 @@ export function speakNumber(number: string, enabled = true): void {
     return
   }
   playNumberTone(number)
+}
+
+export function speakInkColor(inkId: string, enabled = true): void {
+  if (!enabled || !inkId) return
+  const label = COLORS.find((c) => c.id === inkId)?.label ?? inkId
+  if ('speechSynthesis' in window) {
+    ensureVoices()
+    const u = new SpeechSynthesisUtterance(label)
+    u.rate = 0.85
+    u.pitch = 1
+    u.volume = 1
+    if (activeVoice) u.voice = activeVoice
+    window.speechSynthesis.speak(u)
+  }
+}
+
+export function speakEmotion(emotionId: string, enabled = true): void {
+  if (!enabled || !emotionId) return
+  const label = getEmotionById(emotionId).label
+  if ('speechSynthesis' in window) {
+    ensureVoices()
+    const u = new SpeechSynthesisUtterance(label)
+    u.rate = 0.8
+    u.pitch = 0.95
+    u.volume = 1
+    if (activeVoice) u.voice = activeVoice
+    window.speechSynthesis.speak(u)
+  }
 }
 
 export function stopSpeech(): void {

@@ -12,7 +12,10 @@ export type OutputGateMode = 'random' | OutputGate
 
 export type ResponseMode = 'per-stream' | 'gated'
 
-export type GameMode = 'quad' | 'dual' | '2g'
+export type GameMode = 'quad' | 'dual' | '2g' | '2g+'
+
+/** Horizontal integration task type for 2G+ blocks. */
+export type HorizontalTask = 'standard' | 'stroop' | 'generative' | 'emotional'
 
 export type GamePhase = 'ready' | 'playing' | 'paused' | 'results' | 'tutorial'
 
@@ -37,6 +40,14 @@ export interface Stimulus {
   number: string
   color: string
   shape: string
+  /** Stroop color word (distractor — do not match). */
+  stroopWord: string
+  /** Stroop ink color id (match target in Stroop blocks). */
+  stroopInk: string
+  /** Session generative shape category id. */
+  generativeShape: string
+  /** Emotion category id (2G+ emotional blocks). */
+  emotion: string
 }
 
 export interface InputGate {
@@ -56,6 +67,8 @@ export interface Trial {
   intervalMs?: number
   /** Swapped key mapping for the active pair within this block (2G). */
   keysSwapped?: boolean
+  /** 2G+ horizontal integration task for this block. */
+  horizontalTask?: HorizontalTask
 }
 
 export interface StreamKeys {

@@ -1,4 +1,5 @@
 import { GRID_PX } from '../lib/constants'
+import { isGatedTrainingMode } from '../lib/twoGPlus'
 import { getKeyForStream } from '../lib/response'
 import { createIdleGate, createIdleStimulus } from '../lib/sequence'
 import { StimulusGrid } from './StimulusGrid'
@@ -42,7 +43,7 @@ export function QuadBoard({
   const gate = idle ? createIdleGate() : inputGate
   const displayStimulus = idle ? createIdleStimulus() : stimulus
   const showGates =
-    showGateOverlay && settings.gameMode === '2g' && !idle
+    showGateOverlay && isGatedTrainingMode(settings.gameMode) && !idle
 
   const boardHeight = settings.gridMode === '3d' ? '60.3svmin' : GRID_PX
 

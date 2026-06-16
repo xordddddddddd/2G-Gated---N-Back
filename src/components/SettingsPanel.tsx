@@ -7,6 +7,7 @@ import {
   STREAM_LABELS,
   TRIAL_COUNT_OPTIONS,
 } from '../lib/constants'
+import { isGatedTrainingMode } from '../lib/twoGPlus'
 import { getKeyForStream } from '../lib/response'
 import type { GameSettings, InputGate, OutputGateMode, ResponseMode, Stream } from '../types/game'
 
@@ -246,7 +247,7 @@ export function SettingsPanel({ settings, onUpdate, onReset }: SettingsPanelProp
                 format={(m) => (m === 'random' ? 'Random per block (2G)' : m.toUpperCase())}
               />
             </Field>
-            {settings.gameMode === '2g' && (
+            {isGatedTrainingMode(settings.gameMode) && (
               <>
                 <Toggle
                   label="Response switching"

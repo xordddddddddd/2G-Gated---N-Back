@@ -1,6 +1,7 @@
-import { OUTPUT_GATE_LABELS, TWO_G_SESSION_BLOCKS, get2GActivePairLabel } from '../lib/constants'
+import { OUTPUT_GATE_LABELS, TWO_G_SESSION_BLOCKS } from '../lib/constants'
 import { format2GKeyMapping } from '../lib/twoG'
-import type { GameSettings, InputGate, OutputGate } from '../types/game'
+import { getGatedPairLabel, getHorizontalTaskLabel } from '../lib/twoGPlus'
+import type { GameSettings, HorizontalTask, InputGate, OutputGate } from '../types/game'
 
 interface BlockCueOverlayProps {
   inputGate: InputGate
@@ -10,6 +11,8 @@ interface BlockCueOverlayProps {
   keys: GameSettings['keys']
   keysSwapped: boolean
   responseSwitching: boolean
+  horizontalTask?: HorizontalTask
+  is2GPlus?: boolean
 }
 
 export function BlockCueOverlay({
@@ -20,10 +23,13 @@ export function BlockCueOverlay({
   keys,
   keysSwapped,
   responseSwitching,
+  horizontalTask,
+  is2GPlus = false,
 }: BlockCueOverlayProps) {
   const output = OUTPUT_GATE_LABELS[outputGate]
-  const pairLabel = get2GActivePairLabel(inputGate)
+  const pairLabel = getGatedPairLabel(inputGate, horizontalTask)
   const keyMapping = format2GKeyMapping(inputGate, keys, keysSwapped)
+  const taskLabel = horizontalTask ? getHorizontalTaskLabel(horizontalTask) : null
 
   return (
     <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/85 p-4">
@@ -31,8 +37,13 @@ export function BlockCueOverlay({
         <p className="text-[11px] uppercase tracking-[0.25em] text-white/40">
           Block {blockNumber} / {TWO_G_SESSION_BLOCKS}
         </p>
-        <h2 className="text-xl font-serif">2G Block Start</h2>
+        <h2 className="text-xl font-serif">{is2GPlus ? '2G+ Block Start' : '2G Block Start'}</h2>
         <div className="space-y-2 text-sm text-white/70">
+          {taskLabel && horizontalTask !== 'standard' && (
+            <p>
+              Task: <span className="text-teal-300 font-semibold">{taskLabel}</span>
+            </p>
+          )}
           <p>
             Attend to: <span className="text-white font-semibold">{pairLabel}</span>
           </p>
