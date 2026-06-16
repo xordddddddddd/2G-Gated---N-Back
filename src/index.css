@@ -40,3 +40,37 @@
     min-height: 100dvh;
   }
 }
+
+.progression-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: #3a3a3a;
+  border-radius: 0;
+  outline: none;
+}
+
+.progression-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #b8b8b8;
+  border: 1px solid #888;
+  border-radius: 1px;
+  cursor: pointer;
+}
+
+.progression-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #b8b8b8;
+  border: 1px solid #888;
+  border-radius: 1px;
+  cursor: pointer;
+}
+
+.progression-slider::-moz-range-track {
+  height: 6px;
+  background: #3a3a3a;
+}

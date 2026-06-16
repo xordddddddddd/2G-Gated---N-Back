@@ -104,6 +104,8 @@ export interface GameSettings {
   rotationSpeed: number
   autoProgression: boolean
   autoProgressionThreshold: number
+  /** Level down when session score falls below this (separate from win threshold). */
+  autoProgressionLoseThreshold: number
   winAfter: number
   loseAfter: number
   tutorialMode: boolean

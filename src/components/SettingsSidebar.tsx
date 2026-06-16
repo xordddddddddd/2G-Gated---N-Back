@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react'
-import { GAME_MODE_LABELS, TWO_G_INTERVAL_PRESETS, TWO_G_PLUS_DEFAULT_SETTINGS, TWO_G_DEFAULT_SETTINGS } from '../lib/constants'
+import {
+  GAME_MODE_LABELS,
+  STREAM_LABELS,
+  TWO_G_INTERVAL_PRESETS,
+  TWO_G_PLUS_DEFAULT_SETTINGS,
+  TWO_G_DEFAULT_SETTINGS,
+} from '../lib/constants'
 import { getEnglishVoices, resumeAudio } from '../lib/audio'
-import type { GameMode, GameSettings } from '../types/game'
+import { getKeyForStream } from '../lib/response'
+import { isGatedTrainingMode } from '../lib/twoGPlus'
+import type { GameMode, GameSettings, Stream } from '../types/game'
 
 interface SettingsSidebarProps {
   settings: GameSettings
@@ -47,6 +55,70 @@ function SliderRow({
   )
 }
 
+function MonoSlider({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+}: {
+  label: string
+  value: number
+  min: number
+  max: number
+  step: number
+  onChange: (v: number) => void
+}) {
+  return (
+    <label className="flex flex-col gap-2">
+      <span className="text-sm text-white/85 font-mono tracking-tight">{label}</span>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="progression-slider w-full"
+      />
+    </label>
+  )
+}
+
+function ToggleSwitch({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean
+  onChange: (checked: boolean) => void
+  label: string
+}) {
+  return (
+    <label className="flex items-center justify-between gap-3 cursor-pointer select-none">
+      <span className="text-sm text-white/85 font-mono">{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={[
+          'relative w-11 h-6 rounded-sm border transition-colors shrink-0',
+          checked ? 'bg-white/25 border-white/40' : 'bg-black border-white/25',
+        ].join(' ')}
+      >
+        <span
+          className={[
+            'absolute top-0.5 left-0.5 w-5 h-[calc(100%-4px)] bg-white/70 border border-white/30 transition-transform',
+            checked ? 'translate-x-[18px]' : 'translate-x-0',
+          ].join(' ')}
+        />
+      </button>
+    </label>
+  )
+}
+
 function SelectRow<T extends string>({
   label,
   value,
@@ -78,11 +150,66 @@ function SelectRow<T extends string>({
   )
 }
 
+const QUAD_KEY_STREAMS: Stream[] = ['position', 'color', 'shape', 'letter']
+const GATED_KEY_STREAMS: Stream[] = ['position', 'letter', 'number', 'color', 'shape']
+
+function KeybindingsPanel({
+  settings,
+  onUpdate,
+}: {
+  settings: GameSettings
+  onUpdate: (partial: Partial<GameSettings>) => void
+}) {
+  const [capturing, setCapturing] = useState<Stream | null>(null)
+  const streams = isGatedTrainingMode(settings.gameMode) ? GATED_KEY_STREAMS : QUAD_KEY_STREAMS
+
+  useEffect(() => {
+    if (!capturing) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault()
+      if (e.key.length === 1) {
+        onUpdate({ keys: { ...settings.keys, [capturing]: e.key.toLowerCase() } })
+        setCapturing(null)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [capturing, onUpdate, settings.keys])
+
+  return (
+    <div className="mt-3 pt-3 border-t border-white/10 space-y-2 font-mono">
+      {streams.map((stream) => (
+        <div key={stream} className="flex items-center justify-between gap-2 text-sm">
+          <span className="text-white/70">{STREAM_LABELS[stream]}</span>
+          <button
+            type="button"
+            onClick={() => setCapturing(stream)}
+            className={[
+              'min-w-[2.5rem] px-2 py-1 border text-center uppercase',
+              capturing === stream
+                ? 'border-white bg-white/10 animate-pulse'
+                : 'border-white/25 hover:border-white/50',
+            ].join(' ')}
+          >
+            {capturing === stream ? '…' : getKeyForStream(stream, settings.keys)}
+          </button>
+        </div>
+      ))}
+      {isGatedTrainingMode(settings.gameMode) && (
+        <p className="text-[10px] text-white/40 pt-1">
+          In 2G / 2G+ play, F = spatial and L = secondary stream for the active block.
+        </p>
+      )}
+    </div>
+  )
+}
+
 const GAME_MODES: GameMode[] = ['quad', 'dual', '2g', '2g+']
 
 export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onToggle }: SettingsSidebarProps) {
   const modeIndex = GAME_MODES.indexOf(settings.gameMode)
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [keybindingsOpen, setKeybindingsOpen] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -171,10 +298,7 @@ export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onTogg
             <SelectRow
               label="Stimulus interval"
               value={settings.variableTiming ? 'variable' : String(settings.intervalMs)}
-              options={[
-                ...TWO_G_INTERVAL_PRESETS.map((ms) => String(ms)),
-                'variable',
-              ]}
+              options={[...TWO_G_INTERVAL_PRESETS.map((ms) => String(ms)), 'variable']}
               labels={{
                 '3000': '3000ms (default)',
                 '2500': '2500ms',
@@ -312,55 +436,63 @@ export function SettingsSidebar({ settings, onUpdate, onReset, collapsed, onTogg
           onChange={(feedbackMode) => onUpdate({ feedbackMode })}
         />
 
-        <label className="flex items-center justify-between gap-2">
-          <span className="text-xs text-white/70">Auto progression</span>
-          <input
-            type="checkbox"
+        <section className="rounded border border-white/15 bg-[#0a0a0a] p-3 space-y-4 font-mono">
+          <ToggleSwitch
+            label="Auto progression:"
             checked={settings.autoProgression}
-            onChange={(e) => onUpdate({ autoProgression: e.target.checked })}
-            className="accent-pink-500"
+            onChange={(autoProgression) => onUpdate({ autoProgression })}
           />
-        </label>
 
-        {settings.autoProgression && (
-          <SliderRow
-            label="When ≥"
-            value={settings.autoProgressionThreshold}
-            min={0.5}
-            max={0.95}
-            step={0.05}
-            format={(v) => `${Math.round(v * 100)}%`}
-            onChange={(autoProgressionThreshold) => onUpdate({ autoProgressionThreshold })}
-          />
-        )}
+          {settings.autoProgression && (
+            <>
+              <MonoSlider
+                label={`When ≥ ${Math.round(settings.autoProgressionThreshold * 100)}%`}
+                value={settings.autoProgressionThreshold}
+                min={0.5}
+                max={0.95}
+                step={0.05}
+                onChange={(autoProgressionThreshold) => onUpdate({ autoProgressionThreshold })}
+              />
+              <MonoSlider
+                label={`Win after: ${settings.winAfter} in a row`}
+                value={settings.winAfter}
+                min={1}
+                max={5}
+                step={1}
+                onChange={(winAfter) => onUpdate({ winAfter })}
+              />
+              <MonoSlider
+                label={`When < ${Math.round(settings.autoProgressionLoseThreshold * 100)}%`}
+                value={settings.autoProgressionLoseThreshold}
+                min={0.3}
+                max={0.85}
+                step={0.05}
+                onChange={(autoProgressionLoseThreshold) => onUpdate({ autoProgressionLoseThreshold })}
+              />
+              <MonoSlider
+                label={`Lose after: ${settings.loseAfter} in a row`}
+                value={settings.loseAfter}
+                min={1}
+                max={5}
+                step={1}
+                onChange={(loseAfter) => onUpdate({ loseAfter })}
+              />
+            </>
+          )}
 
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-white/70">Win after</span>
-          <input
-            type="number"
-            min={1}
-            max={5}
-            value={settings.winAfter}
-            onChange={(e) => onUpdate({ winAfter: Number(e.target.value) })}
-            className="w-full bg-[#1a1a1a] border border-white/20 rounded px-2 py-1.5 text-sm"
-          />
-          <span className="text-[10px] text-white/40">good sessions to level up</span>
-        </label>
+          <button
+            type="button"
+            onClick={() => setKeybindingsOpen((v) => !v)}
+            className="w-full py-2.5 border border-white/20 text-sm text-white/80 hover:bg-white/5 flex items-center justify-center gap-2"
+          >
+            <span>Keybindings</span>
+            <span aria-hidden className="text-white/50">
+              ⌨
+            </span>
+          </button>
 
-        {settings.autoProgression && (
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-white/70">Lose after</span>
-            <input
-              type="number"
-              min={1}
-              max={5}
-              value={settings.loseAfter}
-              onChange={(e) => onUpdate({ loseAfter: Number(e.target.value) })}
-              className="w-full bg-[#1a1a1a] border border-white/20 rounded px-2 py-1.5 text-sm"
-            />
-            <span className="text-[10px] text-white/40">bad sessions to level down</span>
-          </label>
-        )}
+          {keybindingsOpen && <KeybindingsPanel settings={settings} onUpdate={onUpdate} />}
+        </section>
 
         <label className="flex items-center justify-between gap-2">
           <span className="text-xs text-white/70">Tutorial mode</span>

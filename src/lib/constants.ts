@@ -115,8 +115,9 @@ export const DEFAULT_SETTINGS: GameSettings = {
   rotationSpeed: 35,
   autoProgression: true,
   autoProgressionThreshold: 0.8,
+  autoProgressionLoseThreshold: 0.5,
   winAfter: 1,
-  loseAfter: 2,
+  loseAfter: 3,
   tutorialMode: false,
   soundEnabled: true,
   adaptive: true,
@@ -246,6 +247,7 @@ export const TWO_G_DEFAULT_SETTINGS: Partial<GameSettings> = {
   variableTiming: true,
   autoProgression: true,
   autoProgressionThreshold: TWO_G_ADAPTIVE_UP_PCT / 100,
+  autoProgressionLoseThreshold: TWO_G_ADAPTIVE_DOWN_PCT / 100,
   adaptive: true,
   keys: {
     position: 'f',

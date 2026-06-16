@@ -425,13 +425,17 @@ export function useGame() {
               sessionStats.usedStreams,
             )
 
-            if (streamAvg / 100 >= settings.autoProgressionThreshold) {
+            const score = streamAvg / 100
+            const winThreshold = settings.autoProgressionThreshold
+            const loseThreshold = settings.autoProgressionLoseThreshold
+
+            if (score >= winThreshold) {
               setConsecutiveWins((w) => {
                 const nextWins = w + 1
                 if (
                   settings.autoProgression &&
                   nextWins >= settings.winAfter &&
-                  streamAvg / 100 >= settings.autoProgressionThreshold
+                  score >= winThreshold
                 ) {
                   const nextN = Math.min(settings.nLevel + 1, 9)
                   if (nextN > settings.nLevel) {
@@ -446,14 +450,11 @@ export function useGame() {
                 return nextWins
               })
               setConsecutiveLosses(0)
-            } else if (settings.autoProgression) {
+            } else if (settings.autoProgression && score < loseThreshold) {
               setConsecutiveWins(0)
               setConsecutiveLosses((l) => {
                 const nextLosses = l + 1
-                if (
-                  nextLosses >= settings.loseAfter &&
-                  streamAvg / 100 < settings.autoProgressionThreshold
-                ) {
+                if (nextLosses >= settings.loseAfter && score < loseThreshold) {
                   const nextN = Math.max(settings.nLevel - 1, 1)
                   if (nextN < settings.nLevel) {
                     setSettings((s) => {
@@ -468,6 +469,7 @@ export function useGame() {
               })
             } else {
               setConsecutiveWins(0)
+              setConsecutiveLosses(0)
             }
 
             if (settings.adaptive) {
