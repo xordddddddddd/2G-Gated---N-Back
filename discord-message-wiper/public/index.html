@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Discord Message Wiper</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%B9%3C/text%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="app__header">
+        <h1><span class="emoji">🧹</span> Discord Message Wiper</h1>
+        <p class="subtitle">Delete your own messages from a server you're in — locally and privately.</p>
+      </header>
+
+      <!-- Disclaimer / acknowledgement -->
+      <section class="card card--warning" id="disclaimer">
+        <h2>⚠️ Read this before you start</h2>
+        <ul>
+          <li>This tool acts as <strong>your own account</strong> using your account token. Automating a user account is against
+            <a href="https://discord.com/terms" target="_blank" rel="noopener">Discord's Terms of Service</a> and could, in theory, get your account actioned. Use at your own risk.</li>
+          <li>It only deletes <strong>messages you wrote</strong>. It cannot touch other people's messages.</li>
+          <li><strong>Deletion is permanent.</strong> There is no undo. Always run a <em>Dry run</em> first.</li>
+          <li>Your token is kept in this browser tab only and is sent solely to the local proxy that forwards it to Discord. It is never logged or stored on a server.</li>
+          <li>Never share your token with anyone. It grants full access to your account.</li>
+        </ul>
+        <label class="checkbox">
+          <input type="checkbox" id="ack" />
+          <span>I understand the risks and want to continue.</span>
+        </label>
+      </section>
+
+      <!-- Step 1: token -->
+      <section class="card" id="step-auth" hidden>
+        <h2>1. Connect your account</h2>
+        <label class="field">
+          <span class="field__label">Discord user token</span>
+          <input type="password" id="token" placeholder="Paste your token here" autocomplete="off" spellcheck="false" />
+        </label>
+        <div class="row">
+          <button class="btn btn--primary" id="connect">Connect</button>
+          <span class="hint">
+            <button class="linkbtn" id="howto-toggle" type="button">How do I find my token?</button>
+          </span>
+        </div>
+        <div class="howto" id="howto" hidden>
+          <ol>
+            <li>Open Discord in your <strong>browser</strong> (not the desktop app) and log in.</li>
+            <li>Press <kbd>F12</kbd> to open Developer Tools, then go to the <strong>Network</strong> tab.</li>
+            <li>Send any message or switch channels so requests appear.</li>
+            <li>Click a request to <code>discord.com/api</code>, open <strong>Headers</strong>, and find the <code>authorization</code> request header. That value is your token.</li>
+          </ol>
+          <p class="muted">Treat your token like a password. This tool runs locally and never transmits it anywhere except Discord (via the local proxy).</p>
+        </div>
+        <p class="status" id="auth-status"></p>
+      </section>
+
+      <!-- Step 2: pick a server and filters -->
+      <section class="card" id="step-config" hidden>
+        <h2>2. Choose a server &amp; filters</h2>
+        <div class="account-bar" id="account-bar"></div>
+
+        <label class="field">
+          <span class="field__label">Server</span>
+          <select id="guild"></select>
+        </label>
+
+        <details class="advanced">
+          <summary>Optional filters</summary>
+          <div class="grid">
+            <label class="field">
+              <span class="field__label">Only this channel ID <span class="muted">(blank = whole server)</span></span>
+              <input type="text" id="channelId" placeholder="e.g. 123456789012345678" inputmode="numeric" />
+            </label>
+            <label class="field">
+              <span class="field__label">Contains text <span class="muted">(optional)</span></span>
+              <input type="text" id="containsText" placeholder="word or phrase" />
+            </label>
+            <label class="field">
+              <span class="field__label">After date <span class="muted">(optional)</span></span>
+              <input type="date" id="afterDate" />
+            </label>
+            <label class="field">
+              <span class="field__label">Before date <span class="muted">(optional)</span></span>
+              <input type="date" id="beforeDate" />
+            </label>
+            <label class="field">
+              <span class="field__label">Delay between deletes (ms)</span>
+              <input type="number" id="delay" value="1150" min="300" step="50" />
+              <span class="muted">Lower = faster but more likely to hit rate limits. 1000–1500 is safe.</span>
+            </label>
+          </div>
+        </details>
+
+        <div class="row">
+          <button class="btn" id="dry-run">Dry run (preview only)</button>
+          <button class="btn btn--danger" id="start" disabled>Delete my messages</button>
+          <button class="btn btn--ghost" id="stop" hidden>Stop</button>
+        </div>
+        <p class="muted">Run a dry run first to see how many messages match. The delete button unlocks afterward.</p>
+      </section>
+
+      <!-- Progress -->
+      <section class="card" id="step-progress" hidden>
+        <h2>Progress</h2>
+        <div class="stats" id="stats">
+          <div class="stat"><span class="stat__num" id="stat-found">0</span><span class="stat__label">Found</span></div>
+          <div class="stat"><span class="stat__num" id="stat-deleted">0</span><span class="stat__label">Deleted</span></div>
+          <div class="stat"><span class="stat__num" id="stat-failed">0</span><span class="stat__label">Failed/Skipped</span></div>
+        </div>
+        <div class="progress"><div class="progress__bar" id="progress-bar"></div></div>
+        <pre class="log" id="log" aria-live="polite"></pre>
+      </section>
+
+      <footer class="app__footer">
+        <p>Runs entirely on your machine. Not affiliated with Discord. <a href="https://github.com" target="_blank" rel="noopener">Open source</a>.</p>
+      </footer>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
