@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="description" content="Delete your own Discord messages from a specific server or channel. 100% client-side — your token never leaves your browser." />
+    <title>Discord Message Wiper</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%231e1f22'/><path d='M20 18h24l-3 30a4 4 0 0 1-4 3.5H27a4 4 0 0 1-4-3.5L20 18zm6-6h12l2 4H24l2-4z' fill='%23ed4245'/></svg>" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <h1>Discord Message Wiper</h1>
+        <p class="lede">
+          Delete <strong>your own</strong> messages from a specific Discord server or channel.
+          Everything runs in your browser — your token is never sent to anyone except Discord.
+        </p>
+      </header>
+
+      <section class="warning" role="alert">
+        <h2>Read this first</h2>
+        <ul>
+          <li>
+            Automating actions with a <em>user account token</em> is against
+            <a href="https://discord.com/terms" target="_blank" rel="noopener noreferrer">Discord's Terms of Service</a>
+            (the &ldquo;self-bot&rdquo; rule), even when you're only deleting your own data.
+            Use at your own risk — accounts can be flagged or disabled.
+          </li>
+          <li>This tool can only delete messages <strong>you</strong> wrote. It cannot delete other people's messages.</li>
+          <li>Deletions are <strong>permanent</strong> and can't be undone. Use <em>Dry run</em> first.</li>
+          <li>Never share your token. Don't paste it into untrusted sites. The code for this page is open — inspect it before using it.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>1. Credentials</h2>
+        <div class="field">
+          <label for="token">Discord user token</label>
+          <div class="row">
+            <input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your user token here" />
+            <button type="button" id="toggleToken" class="btn ghost" aria-label="Show / hide token">Show</button>
+          </div>
+          <p class="help">
+            How to find your token:
+            open Discord in your browser → <kbd>F12</kbd> (DevTools) → <em>Network</em> tab → reload →
+            click any request to <code>discord.com/api</code> → copy the <code>authorization</code> request header.
+            Don't enable &ldquo;Disable cache&rdquo; or refresh while DevTools is closed; Discord scrubs the value.
+          </p>
+          <label class="check">
+            <input type="checkbox" id="remember" />
+            Remember token in this browser (sessionStorage — cleared when you close the tab)
+          </label>
+        </div>
+
+        <div class="row gap">
+          <button type="button" id="verify" class="btn primary">Verify token</button>
+          <span id="me" class="me muted">Not verified</span>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>2. Where to wipe</h2>
+        <div class="grid two">
+          <div class="field">
+            <label for="guildId">Server (guild) ID</label>
+            <input id="guildId" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="e.g. 81384788765712384" />
+            <p class="help">
+              Enable Developer Mode in Discord (Settings → Advanced), then right-click the server icon → <em>Copy Server ID</em>.
+            </p>
+          </div>
+          <div class="field">
+            <label for="channelId">Channel ID <span class="muted">(optional — leave blank to wipe across the whole server)</span></label>
+            <input id="channelId" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="e.g. 81384788765712384" />
+            <p class="help">Right-click a channel → <em>Copy Channel ID</em>. Required for DM-style wipes; for guilds it scopes the search.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>3. Filters <span class="muted">(optional)</span></h2>
+        <div class="grid two">
+          <div class="field">
+            <label for="contains">Contains text</label>
+            <input id="contains" type="text" autocomplete="off" placeholder="Only delete messages containing this string" />
+          </div>
+          <div class="field">
+            <label for="hasAttachment">Attachment filter</label>
+            <select id="hasAttachment">
+              <option value="any">Any messages</option>
+              <option value="with">Only messages with attachments</option>
+              <option value="without">Only text-only messages</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="afterDate">After date</label>
+            <input id="afterDate" type="datetime-local" />
+          </div>
+          <div class="field">
+            <label for="beforeDate">Before date</label>
+            <input id="beforeDate" type="datetime-local" />
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>4. Run</h2>
+        <div class="grid two">
+          <div class="field">
+            <label for="delay">Delay between deletes (ms)</label>
+            <input id="delay" type="number" min="250" step="50" value="1100" />
+            <p class="help">Discord enforces rate limits. 1000&ndash;1500&nbsp;ms is a safe default.</p>
+          </div>
+          <div class="field">
+            <label for="searchDelay">Delay between search pages (ms)</label>
+            <input id="searchDelay" type="number" min="250" step="50" value="800" />
+          </div>
+        </div>
+        <label class="check">
+          <input type="checkbox" id="dryRun" checked />
+          Dry run (preview what would be deleted — nothing is actually removed)
+        </label>
+        <label class="check">
+          <input type="checkbox" id="useProxy" />
+          Route requests through Vercel proxy at <code>/api/discord</code> (use this if your browser blocks Discord with CORS errors)
+        </label>
+
+        <div class="row gap actions">
+          <button type="button" id="start" class="btn danger">Start</button>
+          <button type="button" id="pause" class="btn" disabled>Pause</button>
+          <button type="button" id="stop" class="btn ghost" disabled>Stop</button>
+        </div>
+
+        <div class="stats">
+          <div><span class="stat-label">Found</span><span id="statFound" class="stat-value">0</span></div>
+          <div><span class="stat-label">Deleted</span><span id="statDeleted" class="stat-value">0</span></div>
+          <div><span class="stat-label">Skipped</span><span id="statSkipped" class="stat-value">0</span></div>
+          <div><span class="stat-label">Failed</span><span id="statFailed" class="stat-value">0</span></div>
+          <div><span class="stat-label">Rate-limited</span><span id="statRate" class="stat-value">0</span></div>
+        </div>
+
+        <div class="progress" aria-hidden="true">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <details open class="log-wrap">
+          <summary>Activity log</summary>
+          <pre id="log" class="log" aria-live="polite"></pre>
+        </details>
+      </section>
+
+      <footer class="foot muted">
+        <p>
+          Client-side only. <a href="./README.md" target="_blank" rel="noopener">Read the README</a>
+          for how this works, threat model, and self-hosting.
+        </p>
+      </footer>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
